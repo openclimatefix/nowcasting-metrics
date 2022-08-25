@@ -62,7 +62,7 @@ def gsp_yields(db_session):
     location = get_location(session=db_session, gsp_id=1)
 
     gsp_yield_1 = GSPYield(datetime_utc=dt1, solar_generation_kw=1000, regime="day-after").to_orm()
-    gsp_yield_2 = GSPYield(datetime_utc=dt2, solar_generation_kw=2000, regime="day-after").to_orm()
+    gsp_yield_2 = GSPYield(datetime_utc=dt2, solar_generation_kw=1000, regime="day-after").to_orm()
     gsp_yield_1.location = location
     gsp_yield_2.location = location
 
