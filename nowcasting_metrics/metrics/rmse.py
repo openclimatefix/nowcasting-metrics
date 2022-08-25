@@ -9,9 +9,13 @@ latest_rmse = Metric(
     "and compares with the PVLive values. The data is from one day",
 )
 
-def make_rmse(session, datetime_interval:DatetimeInterval):
+
+def make_rmse(session, datetime_interval: DatetimeInterval):
 
     # For the latest forecast
+
+    # TODO need to loop over GSPS
+    # TODO add logging
 
     # TODO https://github.com/openclimatefix/nowasting_metrics/issues/3
     number_of_data_points = 1
