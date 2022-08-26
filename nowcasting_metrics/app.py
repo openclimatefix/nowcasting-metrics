@@ -4,6 +4,9 @@ This application will run metrics on the nowcasting forecast
 1. Get all the metrics we want to use
 
 2. Run each metric and save to database
+The metrics are
+A. MAE for each gsp from the last forecast
+B. RMSE for each gsps form the last forecast
 
 """
 import click
