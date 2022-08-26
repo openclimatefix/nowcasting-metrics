@@ -1,3 +1,5 @@
+from typing import Optional
+
 from nowcasting_datamodel.models import Metric
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_metrics.utils import save_metric_value_to_database
@@ -7,6 +9,12 @@ from nowcasting_datamodel.models.models import ForecastValueLatestSQL
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 
 from sqlalchemy.sql import func
+from sqlalchemy.orm.session import Session
+
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 latest_rmse = Metric(
@@ -16,17 +24,31 @@ latest_rmse = Metric(
 )
 
 
-def make_rmse_one_gsp(session, datetime_interval: DatetimeInterval, gsp_id: int):
+def make_rmse_one_gsp(session: Session, datetime_interval: DatetimeInterval, gsp_id: int):
+    """
+    Calculate the RMSE for one GSP, and save to database
 
-    # TODO Issue https://github.com/openclimatefix/nowasting_metrics/issues/2
+    :param session: database session
+    :param datetime_interval: datetime interbal
+    :param gsp_id: the gsp id
+    :return: 1. the MAE, 2. the number of data points
+    """
+
+    logger.debug(
+        f"Calculating RMSE for last forecast for {gsp_id} "
+        f"for start={datetime_interval.end_datetime_utc} "
+        f"and end-{datetime_interval.end_datetime_utc}"
+    )
 
     query = session.query(
-        func.avg(func.pow(
-            ForecastValueLatestSQL.expected_power_generation_megawatts
-            - GSPYieldSQL.solar_generation_kw / 1000
-        ,2)),
-        func.count(
-            ForecastValueLatestSQL.expected_power_generation_megawatts)
+        func.avg(
+            func.pow(
+                ForecastValueLatestSQL.expected_power_generation_megawatts
+                - GSPYieldSQL.solar_generation_kw / 1000,
+                2,
+            )
+        ),
+        func.count(ForecastValueLatestSQL.expected_power_generation_megawatts),
     )
 
     # filter on gsp
@@ -47,8 +69,12 @@ def make_rmse_one_gsp(session, datetime_interval: DatetimeInterval, gsp_id: int)
 
     results = query.all()
 
+    logger.debug(results)
+
     number_of_data_points = results[0][1]
-    value = results[0][0]*0.5
+    value = results[0][0] * 0.5
+
+    logger.debug(f"Found RMSE of {value} from {number_of_data_points} data points.")
 
     save_metric_value_to_database(
         session=session,
@@ -62,12 +88,15 @@ def make_rmse_one_gsp(session, datetime_interval: DatetimeInterval, gsp_id: int)
     return value, number_of_data_points
 
 
-def make_rmse(session, datetime_interval: DatetimeInterval):
+def make_rmse(session: Session, datetime_interval: DatetimeInterval, n_gsps: Optional[int] = N_GSP):
+    """
+    Calculate RMSE for all GSPs
 
-    # For the latest forecast
+    :param session: database session
+    :param datetime_interval: datetime interval
+    :param n_gsps: The number of gsps (+1 for national)
+    """
 
     # loop over gsps
-    for gps_id in range(0, N_GSP + 1):
+    for gps_id in range(0, n_gsps + 1):
         make_rmse_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
-    # TODO add logging
-

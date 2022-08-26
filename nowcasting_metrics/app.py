@@ -6,43 +6,87 @@ This application will run metrics on the nowcasting forecast
 2. Run each metric and save to database
 
 """
-
+import click
+import os
+import logging
+from typing import Optional
 from datetime import datetime, timezone, timedelta
 
+from nowcasting_datamodel import N_GSP
+from nowcasting_datamodel.connection import DatabaseConnection
+from nowcasting_datamodel.models.base import Base_Forecast
+
+import nowcasting_metrics
 from nowcasting_metrics.metrics.mae import make_mae
 from nowcasting_metrics.metrics.rmse import make_rmse
+from nowcasting_metrics.metrics.metrics import check_metrics_in_database
 
 from nowcasting_datamodel.models.metric import DatetimeInterval
 
+logging.basicConfig(
+    level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
+    format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
-def app():
 
-    # TODO add version
+@click.command()
+@click.option(
+    "--db-url",
+    default=None,
+    envvar="DB_URL",
+    help="The Database URL where forecasts will be saved",
+    type=click.STRING,
+)
+@click.option(
+    "--datetime-now",
+    default=None,
+    envvar="DATETIME_NOW",
+    help="Which timestamp to use. Default is None, and now is used. Must be in the format YYYY-MM-DD",
+    type=click.STRING,
+)
+@click.option(
+    "--n-gsps",
+    default=N_GSP,
+    envvar="N_GSPS",
+    help="Number of gsps data to pull",
+    type=click.STRING,
+)
+def app(
+    db_url: str,
+    datetime_now: Optional[str] = None,
+    n_gsps: Optional[int] = N_GSP,
+):
 
-    # Make database connection and session
-    # TODO
-    session = None
+    logger.info(f"Running Metrics app ({nowcasting_metrics.__version__})")
+    n_gsps = int(n_gsps)
 
-    # get all metrics, and make sure they are in the database
+    if datetime_now is None:
+        datetime_now = datetime.now(tz=timezone.utc).date()
+    else:
+        datetime_now = datetime.strptime(datetime_now, "%Y-%M-%d")
+        datetime_now = datetime_now.date()
 
-    # run daily metrics
+    connection = DatabaseConnection(url=db_url, base=Base_Forecast, echo=False)
+    with connection.get_session() as session:
 
-    # get start and end datetime
-    yesterday_start_datetime = datetime.now(tz=timezone.utc).date() - timedelta(days=1)
-    yesterday_start_datetime = datetime.combine(yesterday_start_datetime, datetime.min.time())
-    yesterday_end_datetime = yesterday_start_datetime + timedelta(days=1)
-    datetime_interval = DatetimeInterval(
-        start_datetime_utc=yesterday_start_datetime, end_datetime_utc=yesterday_end_datetime
-    )
+        # check metrics are in the datbase
+        check_metrics_in_database(session=session)
 
-    # run daily MAE
-    make_mae(
-        session=session,
-        datetime_interval=datetime_interval,
-    )
+        # get start and end datetime
+        start_datetime = datetime_now - timedelta(days=1)
+        start_datetime = datetime.combine(start_datetime, datetime.min.time())
+        end_datetime = start_datetime + timedelta(days=1)
+        datetime_interval = DatetimeInterval(
+            start_datetime_utc=start_datetime, end_datetime_utc=end_datetime
+        )
+        logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
-    # run daily RMSE
-    make_rmse(
-        session=session,
-        datetime_interval=datetime_interval,
-    )
+        # run daily MAE
+        make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+
+        # run daily RMSE
+        make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+
+        # save values to database
+        session.commit()

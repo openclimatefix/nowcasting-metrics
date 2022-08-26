@@ -44,14 +44,16 @@ def forecast_values_latest(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
-    forecast_values_latest_1 = ForecastValueLatestSQL(
-        target_time=dt1, expected_power_generation_megawatts=1, gsp_id=1
-    )
-    forecast_values_latest_2 = ForecastValueLatestSQL(
-        target_time=dt2, expected_power_generation_megawatts=4, gsp_id=1
-    )
+    for gsp_id in range(0, 6):
 
-    db_session.add_all([forecast_values_latest_1, forecast_values_latest_2])
+        forecast_values_latest_1 = ForecastValueLatestSQL(
+            target_time=dt1, expected_power_generation_megawatts=1, gsp_id=gsp_id
+        )
+        forecast_values_latest_2 = ForecastValueLatestSQL(
+            target_time=dt2, expected_power_generation_megawatts=4, gsp_id=gsp_id
+        )
+
+        db_session.add_all([forecast_values_latest_1, forecast_values_latest_2])
 
 
 @pytest.fixture
@@ -59,14 +61,20 @@ def gsp_yields(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
-    location = get_location(session=db_session, gsp_id=1)
+    for gsp_id in range(0, 6):
 
-    gsp_yield_1 = GSPYield(datetime_utc=dt1, solar_generation_kw=1000, regime="day-after").to_orm()
-    gsp_yield_2 = GSPYield(datetime_utc=dt2, solar_generation_kw=1000, regime="day-after").to_orm()
-    gsp_yield_1.location = location
-    gsp_yield_2.location = location
+        location = get_location(session=db_session, gsp_id=gsp_id)
 
-    db_session.add_all([gsp_yield_1, gsp_yield_2])
+        gsp_yield_1 = GSPYield(
+            datetime_utc=dt1, solar_generation_kw=1000, regime="day-after"
+        ).to_orm()
+        gsp_yield_2 = GSPYield(
+            datetime_utc=dt2, solar_generation_kw=1000, regime="day-after"
+        ).to_orm()
+        gsp_yield_1.location = location
+        gsp_yield_2.location = location
+
+        db_session.add_all([gsp_yield_1, gsp_yield_2])
 
 
 @pytest.fixture
