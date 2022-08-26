@@ -20,7 +20,7 @@ services:
       - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
       - LOG_LEVEL=DEBUG
     command: >
-      bash -c "pytest --cov=./gspconsumer
+      bash -c "pytest --cov=./nowcasting_metrics
       && coverage report -m
       && coverage xml
       && cp .coverage ./tests/
