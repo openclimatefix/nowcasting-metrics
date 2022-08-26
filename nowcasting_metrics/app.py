@@ -9,22 +9,21 @@ A. MAE for each gsp from the last forecast
 B. RMSE for each gsps form the last forecast
 
 """
-import click
-import os
 import logging
-from typing import Optional
+import os
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 
+import click
 from nowcasting_datamodel import N_GSP
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_Forecast
+from nowcasting_datamodel.models.metric import DatetimeInterval
 
 import nowcasting_metrics
 from nowcasting_metrics.metrics.mae import make_mae
-from nowcasting_metrics.metrics.rmse import make_rmse
 from nowcasting_metrics.metrics.metrics import check_metrics_in_database
-
-from nowcasting_datamodel.models.metric import DatetimeInterval
+from nowcasting_metrics.metrics.rmse import make_rmse
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),

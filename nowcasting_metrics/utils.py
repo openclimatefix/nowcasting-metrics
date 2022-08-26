@@ -1,5 +1,5 @@
-from nowcasting_datamodel.models.metric import Metric, DatetimeInterval, MetricValueSQL
 from nowcasting_datamodel.models.gsp import LocationSQL
+from nowcasting_datamodel.models.metric import Metric, DatetimeInterval, MetricValueSQL
 from nowcasting_datamodel.read.read_metric import get_metric, get_datetime_interval
 
 

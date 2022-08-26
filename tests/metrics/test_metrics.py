@@ -1,5 +1,6 @@
-from nowcasting_metrics.metrics.metrics import check_metrics_in_database
 from nowcasting_datamodel.models.metric import MetricSQL
+
+from nowcasting_metrics.metrics.metrics import check_metrics_in_database
 
 
 def test_get_metrics(db_session):

@@ -1,6 +1,6 @@
 from click.testing import CliRunner
-from nowcasting_datamodel.models.metric import MetricValueSQL, MetricSQL
 from nowcasting_datamodel.models.gsp import GSPYieldSQL
+from nowcasting_datamodel.models.metric import MetricValueSQL, MetricSQL
 from nowcasting_datamodel.models.models import ForecastValueLatestSQL
 
 from nowcasting_metrics.app import app
