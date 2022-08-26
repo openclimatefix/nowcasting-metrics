@@ -6,7 +6,7 @@ from nowcasting_datamodel.models.models import ForecastValueLatestSQL
 from nowcasting_metrics.app import app
 
 
-def test_app(db_connection, db_session, gsp_yields, forecast_values_latest):
+def test_app(db_connection, db_session, gsp_yields, forecast_values_latest, forecast_values):
 
     assert (
         len(
@@ -38,4 +38,4 @@ def test_app(db_connection, db_session, gsp_yields, forecast_values_latest):
     assert len(metric_values) == 6 * 2
 
     metrics = db_session.query(MetricSQL).all()
-    assert len(metrics) == 2
+    assert len(metrics) == 34  # 0,0.5, 1 to 8 hours for 2 mae and rmse

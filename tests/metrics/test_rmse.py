@@ -5,7 +5,9 @@ from nowcasting_metrics.metrics.rmse import (
 )
 
 
-def test_make_rmse(db_session, gsp_yields, forecast_values_latest, datetime_interval):
+def test_make_rmse(
+    db_session, gsp_yields, forecast_values_latest, datetime_interval, forecast_values
+):
 
     value, n = make_rmse_one_gsp(session=db_session, datetime_interval=datetime_interval, gsp_id=1)
 

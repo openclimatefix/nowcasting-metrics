@@ -3,6 +3,10 @@ from nowcasting_datamodel.models.metric import Metric, DatetimeInterval, MetricV
 from nowcasting_datamodel.read.read_metric import get_metric, get_datetime_interval
 
 
+def get_all_forecast_horizons():
+    return list(range(30, 8 * 60 + 30, 30))
+
+
 def save_metric_value_to_database(
     session,
     value: float,

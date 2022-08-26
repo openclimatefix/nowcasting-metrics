@@ -13,7 +13,9 @@ def test_make_mae(db_session, gsp_yields, forecast_values_latest, datetime_inter
     assert n == 2
 
 
-def test_make_mae_all_gsp(db_session, gsp_yields, forecast_values_latest, datetime_interval):
+def test_make_mae_all_gsp(
+    db_session, gsp_yields, forecast_values_latest, datetime_interval, forecast_values
+):
 
     make_mae(session=db_session, datetime_interval=datetime_interval, n_gsps=5)
 

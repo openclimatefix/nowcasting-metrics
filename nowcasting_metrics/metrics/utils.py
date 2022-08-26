@@ -1,3 +1,4 @@
+from nowcasting_datamodel.models import Metric
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.models.models import ForecastValueLatestSQL, ForecastValueSQL, ForecastSQL
@@ -77,3 +78,21 @@ def filter_query_on_datetime_forecast_horizon(
     query = query.order_by(ForecastValueSQL.target_time, ForecastValueSQL.created_utc.desc())
 
     return query
+
+
+def add_forecast_horizon_to_metric(metric: Metric, forecast_horizon_minutes: int):
+    """
+    Add forecast horizon to metric name and description
+
+    :param metric: the orginal metric
+    :param forecast_horizon_minutes: what the forecast horizon in minutes is
+    """
+
+    metric_copy = Metric(**metric.dict())
+    metric_copy.name = metric_copy.name + f" Forecast Horizon {forecast_horizon_minutes} minutes"
+    metric_copy.description = (
+        metric_copy.description
+        + f"This if for a forecast horizon of {forecast_horizon_minutes} minutes"
+    )
+
+    return metric_copy

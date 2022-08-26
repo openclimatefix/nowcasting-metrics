@@ -13,8 +13,9 @@ from sqlalchemy.sql import func
 from nowcasting_metrics.metrics.utils import (
     filter_query_latest_on_datetime,
     filter_query_on_datetime_forecast_horizon,
+    add_forecast_horizon_to_metric,
 )
-from nowcasting_metrics.utils import save_metric_value_to_database
+from nowcasting_metrics.utils import save_metric_value_to_database, get_all_forecast_horizons
 
 logger = logging.getLogger(__name__)
 
@@ -129,10 +130,8 @@ def make_mae_one_gsp_forecast_horizon(
 
     logger.debug(f"Found MAE of {value} from {number_of_data_points} data points.")
 
-    metric = mae_forecast_horizon
-    metric.name = metric.name + f" Forecast Horizon {forecast_horizon_minutes} minutes"
-    metric.description = (
-        metric.description + f"This if for a forecast horizon of {forecast_horizon_minutes} minutes"
+    metric = add_forecast_horizon_to_metric(
+        metric=mae_forecast_horizon, forecast_horizon_minutes=forecast_horizon_minutes
     )
 
     save_metric_value_to_database(
@@ -158,3 +157,12 @@ def make_mae(session: Session, datetime_interval: DatetimeInterval, n_gsps: Opti
 
     for gps_id in range(0, n_gsps + 1):
         make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
+
+    for forecast_horizon_minutes in get_all_forecast_horizons():
+        for gps_id in range(0, n_gsps + 1):
+            make_mae_one_gsp_forecast_horizon(
+                session=session,
+                datetime_interval=datetime_interval,
+                gsp_id=gps_id,
+                forecast_horizon_minutes=forecast_horizon_minutes,
+            )
