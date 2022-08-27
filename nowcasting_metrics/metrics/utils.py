@@ -49,6 +49,8 @@ def filter_query_on_datetime_forecast_horizon(
     :return: query with these filter
     """
 
+    # TODO need to do a sub query and then take do metric
+
     # filter on gsp
     query = query.distinct(ForecastValueSQL.target_time)
 
