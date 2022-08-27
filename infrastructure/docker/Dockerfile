@@ -19,7 +19,7 @@ COPY tests/ app/tests/
 WORKDIR /app
 
 # Add python pathh library
-RUN export PYTHONPATH=$PYTHONPATH:/app/nowcasting_metrics
+ENV PYTHONPATH=${PYTHONPATH}:/app/nowcasting_metrics
 
 RUN if [ "$TESTING" = 1 ]; then pip install pytest pytest-cov coverage; fi
 
