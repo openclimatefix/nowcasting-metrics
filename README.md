@@ -1,7 +1,19 @@
 # nowasting_metrics
 Repo to automatically run metrics on the nowcasting forecast
 
+## Metrics
 
+### DAILY
+
+#### MAE
+
+The MAE is calculated for each GSP on the latest forecast
+
+#### RMSE
+
+The RMSE is calculated for each GSP on the latest forecast
+
+## Tests
 ### Local pytest
 
 To run local pytests you need to
@@ -16,3 +28,27 @@ TO run tests use the following command
 docker-compose -f test-docker-compose.yml build
 docker-compose -f test-docker-compose.yml run nowcasting_metrics
 ```
+
+## Running the app
+### Environmental Variables
+The environmental variables are
+DB_URL: The database url you want to save the results to
+N_GSPS: The number of gsps you want to pull
+DATETIME_NOW: The datetime of when this app is ran. Default is None, and Now() is selected.
+This is useful as the app calculates the daily metrics from yesterday
+
+These options can also be enter like this:
+
+
+### Run Locally
+First add 'nowcasting_metrics' to your python path:
+```
+export PYTHONPATH=$PYTHONPATH:./nowcasting_metrics
+```
+Then run the app.
+```
+python nowcasting_metrics/app.py --n-gsps=10
+```
+You will need to set 'DB_URL'
+
+
