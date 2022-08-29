@@ -1,0 +1,15 @@
+name: Bump version and auto-release (docker)
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bump-version-docker-release:
+    uses: openclimatefix/.github/.github/workflows/docker-release.yml@main
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    with:
+      image_base_name: nowcasting_metrics
+      docker_file: infrastructure/docker/Dockerfile
