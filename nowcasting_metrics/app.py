@@ -45,7 +45,8 @@ logger = logging.getLogger(__name__)
     "--datetime-now",
     default=None,
     envvar="DATETIME_NOW",
-    help="Which timestamp to use. Default is None, and now is used. Must be in the format YYYY-MM-DD",
+    help="Which timestamp to use. Default is None, and now is used. "
+         "Must be in the format YYYY-MM-DD",
     type=click.STRING,
 )
 @click.option(
