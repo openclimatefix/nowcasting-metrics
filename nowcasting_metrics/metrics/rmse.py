@@ -1,3 +1,4 @@
+""" Function to make RMSE """
 from typing import Optional
 
 from nowcasting_datamodel.models import Metric
