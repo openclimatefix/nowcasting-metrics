@@ -60,6 +60,13 @@ def app(
     datetime_now: Optional[str] = None,
     n_gsps: Optional[int] = N_GSP,
 ):
+    """
+    Main App for making metircs
+
+    :param db_url: the database url
+    :param datetime_now: the datetime now, for making metris
+    :param n_gsps: the number of gsps we should use
+    """
 
     logger.info(f"Running Metrics app ({nowcasting_metrics.__version__})")
     n_gsps = int(n_gsps)

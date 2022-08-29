@@ -13,6 +13,7 @@ def save_metric_value_to_database(
     location: LocationSQL,
 ):
     """
+    Save one metric value to the database
 
     :param session:
     :param value:
