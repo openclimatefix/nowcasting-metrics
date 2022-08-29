@@ -9,22 +9,21 @@ A. MAE for each gsp from the last forecast
 B. RMSE for each gsps form the last forecast
 
 """
-import click
-import os
 import logging
+import os
+from datetime import datetime, timedelta, timezone
 from typing import Optional
-from datetime import datetime, timezone, timedelta
 
+import click
 from nowcasting_datamodel import N_GSP
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_Forecast
+from nowcasting_datamodel.models.metric import DatetimeInterval
 
 import nowcasting_metrics
 from nowcasting_metrics.metrics.mae import make_mae
-from nowcasting_metrics.metrics.rmse import make_rmse
 from nowcasting_metrics.metrics.metrics import check_metrics_in_database
-
-from nowcasting_datamodel.models.metric import DatetimeInterval
+from nowcasting_metrics.metrics.rmse import make_rmse
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
@@ -45,7 +44,8 @@ logger = logging.getLogger(__name__)
     "--datetime-now",
     default=None,
     envvar="DATETIME_NOW",
-    help="Which timestamp to use. Default is None, and now is used. Must be in the format YYYY-MM-DD",
+    help="Which timestamp to use. Default is None, and now is used. "
+    "Must be in the format YYYY-MM-DD",
     type=click.STRING,
 )
 @click.option(
@@ -60,6 +60,13 @@ def app(
     datetime_now: Optional[str] = None,
     n_gsps: Optional[int] = N_GSP,
 ):
+    """
+    Main App for making metircs
+
+    :param db_url: the database url
+    :param datetime_now: the datetime now, for making metris
+    :param n_gsps: the number of gsps we should use
+    """
 
     logger.info(f"Running Metrics app ({nowcasting_metrics.__version__})")
     n_gsps = int(n_gsps)

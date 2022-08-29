@@ -1,6 +1,7 @@
-from nowcasting_datamodel.models.metric import Metric, DatetimeInterval, MetricValueSQL
+""" General util functions """
 from nowcasting_datamodel.models.gsp import LocationSQL
-from nowcasting_datamodel.read.read_metric import get_metric, get_datetime_interval
+from nowcasting_datamodel.models.metric import DatetimeInterval, Metric, MetricValueSQL
+from nowcasting_datamodel.read.read_metric import get_datetime_interval, get_metric
 
 
 def save_metric_value_to_database(
@@ -12,6 +13,7 @@ def save_metric_value_to_database(
     location: LocationSQL,
 ):
     """
+    Save one metric value to the database
 
     :param session:
     :param value:
