@@ -34,7 +34,7 @@ def make_rmse_one_gsp(session: Session, datetime_interval: DatetimeInterval, gsp
     """
 
     logger.debug(
-        f"Calculating RMSE for last forecast for {gsp_id} "
+        f"Calculating RMSE for last forecast for {gsp_id=} "
         f"for start={datetime_interval.end_datetime_utc} "
         f"and end-{datetime_interval.end_datetime_utc}"
     )
@@ -68,10 +68,8 @@ def make_rmse_one_gsp(session: Session, datetime_interval: DatetimeInterval, gsp
 
     results = query.all()
 
-    logger.debug(results)
-
     number_of_data_points = results[0][1]
-    value = results[0][0] * 0.5
+    value = results[0][0] ** 0.5
 
     logger.debug(f"Found RMSE of {value} from {number_of_data_points} data points.")
 
