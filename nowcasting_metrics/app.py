@@ -100,3 +100,7 @@ def app(
 
         # save values to database
         session.commit()
+
+
+if __name__ == "__main__":
+    app()
