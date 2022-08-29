@@ -1,19 +1,17 @@
 """ Function to make RMSE """
+import logging
 from typing import Optional
 
-from nowcasting_datamodel.models import Metric
-from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_metrics.utils import save_metric_value_to_database
 from nowcasting_datamodel import N_GSP
-from nowcasting_datamodel.read.read import get_location
-from nowcasting_datamodel.models.models import ForecastValueLatestSQL
+from nowcasting_datamodel.models import Metric
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
-
-from sqlalchemy.sql import func
+from nowcasting_datamodel.models.metric import DatetimeInterval
+from nowcasting_datamodel.models.models import ForecastValueLatestSQL
+from nowcasting_datamodel.read.read import get_location
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql import func
 
-import logging
-
+from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
 

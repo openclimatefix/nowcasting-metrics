@@ -1,9 +1,9 @@
 """ General metric functions """
 
+from nowcasting_datamodel.read.read_metric import get_metric
+
 from nowcasting_metrics.metrics.mae import latest_mae
 from nowcasting_metrics.metrics.rmse import latest_rmse
-
-from nowcasting_datamodel.read.read_metric import get_metric
 
 all_metrics = [latest_mae, latest_rmse]
 
