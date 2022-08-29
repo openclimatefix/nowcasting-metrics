@@ -1,4 +1,4 @@
-from nowcasting_metrics.metrics.utils import check_metrics_in_database
+from nowcasting_metrics.metrics.metrics import check_metrics_in_database
 from nowcasting_datamodel.models.metric import MetricSQL
 
 
