@@ -3,9 +3,9 @@
 from nowcasting_datamodel.read.read_metric import get_metric
 
 from nowcasting_metrics.metrics.mae import latest_mae, mae_all_gsps
-from nowcasting_metrics.metrics.rmse import latest_rmse
+from nowcasting_metrics.metrics.rmse import latest_rmse, rmse_all_gsps
 
-all_metrics = [latest_mae, mae_all_gsps, latest_rmse]
+all_metrics = [latest_mae, mae_all_gsps, latest_rmse, rmse_all_gsps]
 
 
 def check_metrics_in_database(session):

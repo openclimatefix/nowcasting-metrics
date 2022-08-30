@@ -11,6 +11,7 @@ from nowcasting_datamodel.read.read import get_location
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
+from nowcasting_metrics.metrics.utils import filter_query_on_datetime_interval
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
@@ -134,20 +135,6 @@ def make_mae_all_gsp(
     )
 
     return value, number_of_data_points
-
-
-def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
-    """
-    Filter the query on the datetime interval
-
-    :param datetime_interval: the datetime interval object
-    :param query: sql query
-    :return: query
-    """
-    query = query.filter(ForecastValueLatestSQL.target_time > datetime_interval.start_datetime_utc)
-    query = query.filter(ForecastValueLatestSQL.target_time <= datetime_interval.end_datetime_utc)
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueLatestSQL.target_time)
-    return query
 
 
 def make_mae_query(session):
