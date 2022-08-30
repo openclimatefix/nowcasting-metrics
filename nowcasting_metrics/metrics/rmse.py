@@ -126,7 +126,7 @@ def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval):
         value=value,
         number_of_data_points=number_of_data_points,
         datetime_interval=datetime_interval,
-        metric=latest_rmse,
+        metric=rmse_all_gsps,
     )
 
     return value, number_of_data_points
