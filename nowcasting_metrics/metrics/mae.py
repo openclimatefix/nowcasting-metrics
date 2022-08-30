@@ -112,6 +112,9 @@ def make_mae_all_gsp(
     query = query.filter(ForecastValueLatestSQL.gsp_id != 0)
     query = query.filter(ForecastValueLatestSQL.gsp_id == LocationSQL.gsp_id)
 
+    # only include non nan values
+    query = query.filter(GSPYieldSQL.solar_generation_kw + 1 > GSPYieldSQL.solar_generation_kw)
+
     # join target time and yield
     query = filter_query_on_datetime_interval(datetime_interval, query)
 
