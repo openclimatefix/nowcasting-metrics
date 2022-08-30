@@ -35,7 +35,7 @@ def test_app(db_connection, db_session, gsp_yields, forecast_values_latest):
     assert response.exit_code == 0, response.exception
 
     metric_values = db_session.query(MetricValueSQL).all()
-    assert len(metric_values) == 6 * 2
+    assert len(metric_values) == 13
 
     metrics = db_session.query(MetricSQL).all()
-    assert len(metrics) == 2
+    assert len(metrics) == 3
