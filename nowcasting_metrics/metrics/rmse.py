@@ -106,6 +106,7 @@ def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval):
     query = query.join(GSPYieldSQL.location)
     query = query.filter(LocationSQL.gsp_id != 0)
     query = query.filter(ForecastValueLatestSQL.gsp_id != 0)
+    query = query.filter(ForecastValueLatestSQL.gsp_id == LocationSQL.gsp_id)
 
     # join target time and yield
     query = filter_query_on_datetime_interval(datetime_interval, query)
