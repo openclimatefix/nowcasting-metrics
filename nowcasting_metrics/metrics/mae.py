@@ -43,8 +43,10 @@ def make_mae_one_gsp(
 
     query = session.query(
         func.avg(
-            ForecastValueLatestSQL.expected_power_generation_megawatts
-            - GSPYieldSQL.solar_generation_kw / 1000
+            func.abs(
+                ForecastValueLatestSQL.expected_power_generation_megawatts
+                - GSPYieldSQL.solar_generation_kw / 1000
+            )
         ),
         func.count(ForecastValueLatestSQL.expected_power_generation_megawatts),
     )
