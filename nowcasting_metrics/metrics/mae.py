@@ -22,6 +22,13 @@ latest_mae = Metric(
     "and compares with the PVLive values. The data is from one day",
 )
 
+mae_all_gsps = Metric(
+    name="Daily Latest MAE All GSPs",
+    description="This metric calculates the MAE for the latest OCF forecast "
+    "and compares with the PVLive values. The data is from one day. "
+    "This is for all GSPs (not the national)",
+)
+
 
 def make_mae_one_gsp(
     session: Session, datetime_interval: DatetimeInterval, gsp_id: int
@@ -41,15 +48,7 @@ def make_mae_one_gsp(
         f"and end-{datetime_interval.end_datetime_utc}"
     )
 
-    query = session.query(
-        func.avg(
-            func.abs(
-                ForecastValueLatestSQL.expected_power_generation_megawatts
-                - GSPYieldSQL.solar_generation_kw / 1000
-            )
-        ),
-        func.count(ForecastValueLatestSQL.expected_power_generation_megawatts),
-    )
+    query = make_mae_query(session)
 
     # filter on gsp
     query = query.filter()
@@ -60,9 +59,7 @@ def make_mae_one_gsp(
     query = query.filter(ForecastValueLatestSQL.gsp_id == gsp_id)
 
     # join target time and yield
-    query = query.filter(ForecastValueLatestSQL.target_time > datetime_interval.start_datetime_utc)
-    query = query.filter(ForecastValueLatestSQL.target_time <= datetime_interval.end_datetime_utc)
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueLatestSQL.target_time)
+    query = filter_query_on_datetime_interval(datetime_interval, query)
 
     # filter on gsp regime
     query = query.filter(GSPYieldSQL.regime == "day-after")
@@ -86,6 +83,92 @@ def make_mae_one_gsp(
     return value, number_of_data_points
 
 
+def make_mae_all_gsp(
+    session: Session, datetime_interval: DatetimeInterval
+) -> (int, int):
+    """
+    Calculate the MAE for all GSPs (not national), and save to database
+
+    :param session: database session
+    :param datetime_interval: datetime interbal
+    :return: 1. the MAE, 2. the number of data points
+    """
+
+    logger.debug(
+        f"Calculating MAE for last forecast for {gsp_id=} for "
+        f"start={datetime_interval.end_datetime_utc} "
+        f"and end-{datetime_interval.end_datetime_utc}"
+    )
+
+    query = make_mae_query(session)
+
+    # filter on gsp
+    query = query.filter()
+
+    # filter on target time
+    query = query.join(GSPYieldSQL.location)
+    query = query.filter(LocationSQL.gsp_id != 0)
+    query = query.filter(ForecastValueLatestSQL.gsp_id != 0)
+
+    # join target time and yield
+    query = filter_query_on_datetime_interval(datetime_interval, query)
+
+    # filter on gsp regime
+    query = query.filter(GSPYieldSQL.regime == "day-after")
+
+    results = query.all()
+
+    number_of_data_points = results[0][1]
+    value = results[0][0]
+
+    logger.debug(f"Found MAE of {value} from {number_of_data_points} data points, "
+                 f"for all gsps (not national)")
+
+    save_metric_value_to_database(
+        session=session,
+        value=value,
+        number_of_data_points=number_of_data_points,
+        datetime_interval=datetime_interval,
+        metric=mae_all_gsps,
+        location=None,
+    )
+
+    return value, number_of_data_points
+
+
+def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
+    """
+    Filter the query on the datetime interval
+
+    :param datetime_interval: the datetime interval object
+    :param query: sql query
+    :return: query
+    """
+    query = query.filter(ForecastValueLatestSQL.target_time > datetime_interval.start_datetime_utc)
+    query = query.filter(ForecastValueLatestSQL.target_time <= datetime_interval.end_datetime_utc)
+    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueLatestSQL.target_time)
+    return query
+
+
+def make_mae_query(session):
+    """
+    Make MAE query
+
+    :param session: database sessions
+    :return: query
+    """
+    query = session.query(
+        func.avg(
+            func.abs(
+                ForecastValueLatestSQL.expected_power_generation_megawatts
+                - GSPYieldSQL.solar_generation_kw / 1000
+            )
+        ),
+        func.count(ForecastValueLatestSQL.expected_power_generation_megawatts),
+    )
+    return query
+
+
 def make_mae(session: Session, datetime_interval: DatetimeInterval, n_gsps: Optional[int] = N_GSP):
     """
     Calculate MAE for all GSPs
@@ -97,3 +180,5 @@ def make_mae(session: Session, datetime_interval: DatetimeInterval, n_gsps: Opti
 
     for gps_id in range(0, n_gsps + 1):
         make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
+
+    make_mae_all_gsp(session=session, datetime_interval=datetime_interval)
