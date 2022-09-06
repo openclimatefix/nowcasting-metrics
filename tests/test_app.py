@@ -6,7 +6,7 @@ from nowcasting_datamodel.models.models import ForecastValueLatestSQL
 from nowcasting_metrics.app import app
 
 
-def test_app(db_connection, db_session, gsp_yields, forecast_values_latest):
+def test_app(db_connection, db_session, gsp_yields, forecast_values_latest, forecast_values):
 
     assert (
         len(
@@ -35,7 +35,11 @@ def test_app(db_connection, db_session, gsp_yields, forecast_values_latest):
     assert response.exit_code == 0, response.exception
 
     metric_values = db_session.query(MetricValueSQL).all()
-    assert len(metric_values) == 14
+    assert len(metric_values) == 110
+    # National + 5*GSPs + All GSPS = 7
+    # 8 forecast horizones * (National + 5 GSPS) = 48
+    # Total metrics is 55
+    # x2 due to MAE and RMSE
 
     metrics = db_session.query(MetricSQL).all()
     assert len(metrics) == 4

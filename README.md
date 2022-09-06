@@ -9,9 +9,13 @@ Repo to automatically run metrics on the nowcasting forecast
 
 The MAE is calculated for each GSP on the latest forecast
 
+We also calculate MAE for different forecast horizon, from 0 to 8 hours.
+
 #### RMSE
 
 The RMSE is calculated for each GSP on the latest forecast
+
+We also calculate RMSE for different forecast horizon, from 0 to 8 hours.
 
 ## Tests
 ### Local pytest
