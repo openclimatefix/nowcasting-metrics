@@ -1,10 +1,10 @@
 """ util functions for metrics"""
 from nowcasting_datamodel.models import (
     DatetimeInterval,
-    ForecastValueLatestSQL,
-    GSPYieldSQL,
-    ForecastValueSQL,
     ForecastSQL,
+    ForecastValueLatestSQL,
+    ForecastValueSQL,
+    GSPYieldSQL,
     LocationSQL,
 )
 from sqlalchemy import text

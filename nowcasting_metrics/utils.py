@@ -6,7 +6,6 @@ from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval, Metric, MetricValueSQL
 from nowcasting_datamodel.read.read_metric import get_datetime_interval, get_metric
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -11,13 +11,12 @@ from nowcasting_datamodel.read.read import get_location
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
-from nowcasting_metrics.utils import save_metric_value_to_database
-
 from nowcasting_metrics.metrics.utils import (
     filter_query_on_datetime_interval,
     make_forecast_sub_query,
     make_gsp_sub_query,
 )
+from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
 
