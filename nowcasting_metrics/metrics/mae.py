@@ -70,7 +70,7 @@ def make_mae_one_gsp_with_forecast_horizon(
 
     logger.debug(
         f"Found MAE of {value} from {number_of_data_points} "
-        f"data points for forecast horizon {forecast_horizon_minutes}."
+        f"data points for forecast horizon {forecast_horizon_minutes} for {gsp_id}."
     )
 
     save_metric_value_to_database(
