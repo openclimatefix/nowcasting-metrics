@@ -35,10 +35,10 @@ def test_app(db_connection, db_session, gsp_yields, forecast_values_latest, fore
     assert response.exit_code == 0, response.exception
 
     metric_values = db_session.query(MetricValueSQL).all()
-    assert len(metric_values) == 110
+    assert len(metric_values) == 30
     # National + 5*GSPs + All GSPS = 7
-    # 8 forecast horizones * (National + 5 GSPS) = 48
-    # Total metrics is 55
+    # 8 forecast horizons * (National) = 8
+    # Total metrics is 15
     # x2 due to MAE and RMSE
 
     metrics = db_session.query(MetricSQL).all()

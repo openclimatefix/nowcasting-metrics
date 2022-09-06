@@ -235,10 +235,9 @@ def make_rmse(
 
     # loop over forecast horizons
     for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
-        for gps_id in range(0, n_gsps + 1):
-            make_rmse_one_gsp_with_forecast_horizon(
-                session=session,
-                datetime_interval=datetime_interval,
-                gsp_id=gps_id,
-                forecast_horizon_minutes=forecast_horizon_minutes,
-            )
+        make_rmse_one_gsp_with_forecast_horizon(
+            session=session,
+            datetime_interval=datetime_interval,
+            gsp_id=0,
+            forecast_horizon_minutes=forecast_horizon_minutes,
+        )
