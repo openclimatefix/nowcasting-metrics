@@ -246,4 +246,3 @@ def make_mae(
             gsp_id=0,
             forecast_horizon_minutes=forecast_horizon_minutes,
         )
-
