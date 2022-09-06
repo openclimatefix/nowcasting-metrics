@@ -1,17 +1,21 @@
 """ Function to make MAE """
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from nowcasting_datamodel import N_GSP
 from nowcasting_datamodel.models import Metric
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.models.models import ForecastValueLatestSQL
+from nowcasting_datamodel.models.models import ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
-from nowcasting_metrics.metrics.utils import filter_query_on_datetime_interval
+from nowcasting_metrics.metrics.utils import (
+    filter_query_on_datetime_interval,
+    make_forecast_sub_query,
+    make_gsp_sub_query,
+)
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
@@ -29,6 +33,57 @@ mae_all_gsps = Metric(
     "and compares with the PVLive values. The data is from one day. "
     "This is for all GSPs (not the national)",
 )
+
+
+def make_mae_one_gsp_with_forecast_horizon(
+    session: Session,
+    datetime_interval: DatetimeInterval,
+    gsp_id: int,
+    forecast_horizon_minutes: int,
+) -> (int, int):
+    """
+    Calculate the MAE for one GSP for a forecast horizon, and save to database
+
+    :param session: database session
+    :param datetime_interval: datetime interbal
+    :param gsp_id: the gsp id
+    :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
+        made 60 minutes before target time
+    :return: 1. the MAE, 2. the number of data points
+    """
+
+    sub_query_gsp = make_gsp_sub_query(datetime_interval, gsp_id, session)
+    sub_query_forecast = make_forecast_sub_query(
+        datetime_interval, forecast_horizon_minutes, gsp_id, session
+    )
+
+    # make full query
+    query = make_mae_query(session, model=ForecastValueSQL)
+
+    query = query.filter(ForecastValueSQL.id.in_(sub_query_forecast))
+    query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
+    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSQL.target_time)
+    results = query.all()
+
+    number_of_data_points = results[0][1]
+    value = results[0][0]
+
+    logger.debug(
+        f"Found MAE of {value} from {number_of_data_points} "
+        f"data points for forecast horizon {forecast_horizon_minutes}."
+    )
+
+    save_metric_value_to_database(
+        session=session,
+        value=value,
+        number_of_data_points=number_of_data_points,
+        datetime_interval=datetime_interval,
+        metric=latest_mae,
+        location=get_location(gsp_id=gsp_id, session=session),
+        forecast_horizon_minutes=forecast_horizon_minutes,
+    )
+
+    return value, number_of_data_points
 
 
 def make_mae_one_gsp(
@@ -84,9 +139,7 @@ def make_mae_one_gsp(
     return value, number_of_data_points
 
 
-def make_mae_all_gsp(
-    session: Session, datetime_interval: DatetimeInterval
-) -> (int, int):
+def make_mae_all_gsp(session: Session, datetime_interval: DatetimeInterval) -> (int, int):
     """
     Calculate the MAE for all GSPs (not national), and save to database
 
@@ -126,8 +179,10 @@ def make_mae_all_gsp(
     number_of_data_points = results[0][1]
     value = results[0][0]
 
-    logger.debug(f"Found MAE of {value} from {number_of_data_points} data points, "
-                 f"for all gsps (not national)")
+    logger.debug(
+        f"Found MAE of {value} from {number_of_data_points} data points, "
+        f"for all gsps (not national)"
+    )
 
     save_metric_value_to_database(
         session=session,
@@ -141,35 +196,53 @@ def make_mae_all_gsp(
     return value, number_of_data_points
 
 
-def make_mae_query(session):
+def make_mae_query(
+    session, model: Union[ForecastValueSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL
+):
     """
     Make MAE query
 
     :param session: database sessions
+    :param model: either ForecastValueSQL or ForecastValueLatestSQL
     :return: query
     """
     query = session.query(
         func.avg(
             func.abs(
-                ForecastValueLatestSQL.expected_power_generation_megawatts
-                - GSPYieldSQL.solar_generation_kw / 1000
+                model.expected_power_generation_megawatts - GSPYieldSQL.solar_generation_kw / 1000
             )
         ),
-        func.count(ForecastValueLatestSQL.expected_power_generation_megawatts),
+        func.count(model.expected_power_generation_megawatts),
     )
     return query
 
 
-def make_mae(session: Session, datetime_interval: DatetimeInterval, n_gsps: Optional[int] = N_GSP):
+def make_mae(
+    session: Session,
+    datetime_interval: DatetimeInterval,
+    n_gsps: Optional[int] = N_GSP,
+    max_forecast_horizon_minutes: Optional[int] = 480,
+):
     """
     Calculate MAE for all GSPs
 
     :param session: database session
     :param datetime_interval: datetime interval
     :param n_gsps: The number of Gsps to loop over. Default is N_GSP. (+1 for national)
+    :param: max_forecast_horizon_minutes. The maximum forecast horizon we should look at, default is 8 hours
     """
 
     for gps_id in range(0, n_gsps + 1):
         make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
 
     make_mae_all_gsp(session=session, datetime_interval=datetime_interval)
+
+    # loop over forecast horizons
+    for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
+        for gps_id in range(0, n_gsps + 1):
+            make_mae_one_gsp_with_forecast_horizon(
+                session=session,
+                datetime_interval=datetime_interval,
+                gsp_id=gps_id,
+                forecast_horizon_minutes=forecast_horizon_minutes,
+            )
