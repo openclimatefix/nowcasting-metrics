@@ -25,6 +25,21 @@ def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query
 
 
 def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id, session):
+    """
+    Make SQL sub query to get latest forecast, given a forecast horizon
+
+    This filters the ForecastValueSQL, and filters on
+    - target_time
+    - gsp_id
+    - created_utc
+
+    :param datetime_interval: the datetime interval
+    :param forecast_horizon_minutes: the forecast horizon
+        ie. Use results from forecast that are made 60 minutes before target time
+    :param gsp_id: the gsp id
+    :param session: database sessions
+    :return: sub query
+    """
     # make forecast sub query
     sub_query_forecast = session.query(ForecastValueSQL.id)
     sub_query_forecast = sub_query_forecast.distinct(ForecastValueSQL.target_time)
@@ -50,6 +65,14 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
 
 
 def make_gsp_sub_query(datetime_interval, gsp_id, session):
+    """
+    Get the GSP yeilds for a give datetime interval
+
+    :param datetime_interval:
+    :param gsp_id: the gsp id
+    :param session: sql session
+    :return: sub query
+    """
     # Make gsp subquery
     sub_query_gsp = session.query(GSPYieldSQL.id)
     sub_query_gsp = sub_query_gsp.join(GSPYieldSQL.location)

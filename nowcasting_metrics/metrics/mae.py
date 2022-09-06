@@ -93,7 +93,7 @@ def make_mae_one_gsp(
     Calculate the MAE for one GSP, and save to database
 
     :param session: database session
-    :param datetime_interval: datetime interbal
+    :param datetime_interval: datetime interval
     :param gsp_id: the gsp id
     :return: 1. the MAE, 2. the number of data points
     """
