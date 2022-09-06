@@ -229,7 +229,8 @@ def make_mae(
     :param session: database session
     :param datetime_interval: datetime interval
     :param n_gsps: The number of Gsps to loop over. Default is N_GSP. (+1 for national)
-    :param: max_forecast_horizon_minutes. The maximum forecast horizon we should look at, default is 8 hours
+    :param: max_forecast_horizon_minutes.
+        The maximum forecast horizon we should look at, default is 8 hours
     """
 
     for gps_id in range(0, n_gsps + 1):

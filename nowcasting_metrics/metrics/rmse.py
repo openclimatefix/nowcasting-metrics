@@ -224,7 +224,8 @@ def make_rmse(
     :param session: database session
     :param datetime_interval: datetime interval
     :param n_gsps: The number of gsps (+1 for national)
-    :param: max_forecast_horizon_minutes. The maximum forecast horizon we should look at, default is 8 hours
+    :param: max_forecast_horizon_minutes.
+        The maximum forecast horizon we should look at, default is 8 hours
     """
 
     # loop over gsps
