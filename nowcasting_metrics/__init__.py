@@ -2,4 +2,4 @@
 
 This calculate netrics for the live nowcasting forecast
 """
-__version__ = "0.0.10"
+__version__ = "0.0.11"
