@@ -66,7 +66,7 @@ def make_rmse_one_gsp_with_forecast_horizon(
     results = query.all()
 
     number_of_data_points = results[0][1]
-    value = results[0][0] 
+    value = results[0][0]
 
     logger.debug(
         f"Found RMSE of {value} from {number_of_data_points} "
@@ -175,7 +175,7 @@ def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval):
     results = query.all()
 
     number_of_data_points = results[0][1]
-    value = results[0][0] ** 0.5
+    value = results[0][0]
 
     logger.debug(f"Found RMSE of {value} from {number_of_data_points} data points.")
 
