@@ -66,7 +66,7 @@ def make_rmse_one_gsp_with_forecast_horizon(
     results = query.all()
 
     number_of_data_points = results[0][1]
-    value = results[0][0] ** 0.5
+    value = results[0][0] 
 
     logger.debug(
         f"Found RMSE of {value} from {number_of_data_points} "
@@ -121,7 +121,7 @@ def make_rmse_one_gsp(session: Session, datetime_interval: DatetimeInterval, gsp
     results = query.all()
 
     number_of_data_points = results[0][1]
-    value = results[0][0] ** 0.5
+    value = results[0][0]
 
     logger.debug(f"Found RMSE of {value} from {number_of_data_points} data points.")
 
@@ -200,10 +200,13 @@ def make_rmse_query(
     :return: query
     """
     query = session.query(
-        func.avg(
-            func.pow(
-                model.expected_power_generation_megawatts - GSPYieldSQL.solar_generation_kw / 1000,
-                2,
+        func.sqrt(
+            func.avg(
+                func.pow(
+                    model.expected_power_generation_megawatts
+                    - GSPYieldSQL.solar_generation_kw / 1000,
+                    2,
+                )
             )
         ),
         func.count(model.expected_power_generation_megawatts),
