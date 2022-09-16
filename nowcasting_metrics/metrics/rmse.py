@@ -51,7 +51,7 @@ def make_pvlive_rmse(
     :param session: database sessions
     :param datetime_interval: datetime interval
     :param gsp_id: the gsp id
-    :return:  1. the MAE, 2. the number of data points
+    :return:  1. the RMSE, 2. the number of data points
     """
 
     sub_query_day_after = make_pvlive_subquery(
