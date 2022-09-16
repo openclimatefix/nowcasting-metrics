@@ -93,7 +93,7 @@ def make_pvlive_subquery(
     session: Session, datetime_interval: DatetimeInterval, regime: str, gsp_id: int
 ):
     """
-    make PV live query
+    Make PV live query
 
     :param session: database sessions
     :param datetime_interval: which date interval to filer on
