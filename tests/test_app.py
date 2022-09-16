@@ -42,4 +42,4 @@ def test_app(db_connection, db_session, gsp_yields, forecast_values_latest, fore
     # x2 due to MAE and RMSE
 
     metrics = db_session.query(MetricSQL).all()
-    assert len(metrics) == 4
+    assert len(metrics) == 6

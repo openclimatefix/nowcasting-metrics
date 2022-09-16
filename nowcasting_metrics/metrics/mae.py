@@ -81,8 +81,7 @@ def make_pvlive_mae(
     value = results[0][0]
 
     logger.debug(
-        f"Found PVlive MAE of {value} from {number_of_data_points} "
-        f"data points for {gsp_id=}."
+        f"Found PVlive MAE of {value} from {number_of_data_points} " f"data points for {gsp_id=}."
     )
 
     save_metric_value_to_database(
