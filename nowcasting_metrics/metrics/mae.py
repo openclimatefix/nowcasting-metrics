@@ -15,6 +15,7 @@ from nowcasting_metrics.metrics.utils import (
     filter_query_on_datetime_interval,
     make_forecast_sub_query,
     make_gsp_sub_query,
+    make_pvlive_subquery,
 )
 from nowcasting_metrics.utils import save_metric_value_to_database
 
@@ -33,6 +34,67 @@ mae_all_gsps = Metric(
     "and compares with the PVLive values. The data is from one day. "
     "This is for all GSPs (not the national)",
 )
+
+pvlive_mae = Metric(
+    name="PVLive MAE",
+    description="This metric calculates the MAE for the initial estimate by "
+    "PVLive and the updated estimate. The data is from one day for each GSP.",
+)
+
+
+def make_pvlive_mae(
+    session: Session, datetime_interval: DatetimeInterval, gsp_id: int
+) -> (int, int):
+    """
+    Calculate MAE for the PV Live initial and updates estimate
+
+    :param session: database sessions
+    :param datetime_interval: datetime interval
+    :param gsp_id: the gsp id
+    :return:  1. the MAE, 2. the number of data points
+    """
+
+    sub_query_day_after = make_pvlive_subquery(
+        session=session, datetime_interval=datetime_interval, gsp_id=gsp_id, regime="day-after"
+    ).subquery()
+
+    sub_query_in_day = make_pvlive_subquery(
+        session=session, datetime_interval=datetime_interval, gsp_id=gsp_id, regime="in-day"
+    ).subquery()
+
+    query = session.query(
+        func.avg(
+            func.abs(
+                sub_query_day_after.c.solar_generation_kw / 1000
+                - sub_query_in_day.c.solar_generation_kw / 1000
+            )
+        ),
+        func.count(sub_query_day_after.c.datetime_utc),
+    )
+
+    query = query.join(
+        sub_query_in_day, sub_query_day_after.c.datetime_utc == sub_query_in_day.c.datetime_utc
+    )
+    results = query.all()
+
+    number_of_data_points = results[0][1]
+    value = results[0][0]
+
+    logger.debug(
+        f"Found PVlive MAE of {value} from {number_of_data_points} "
+        f"data points for {gsp_id=}."
+    )
+
+    save_metric_value_to_database(
+        session=session,
+        value=value,
+        number_of_data_points=number_of_data_points,
+        datetime_interval=datetime_interval,
+        metric=pvlive_mae,
+        location=get_location(gsp_id=gsp_id, session=session),
+    )
+
+    return value, number_of_data_points
 
 
 def make_mae_one_gsp_with_forecast_horizon(
@@ -246,3 +308,6 @@ def make_mae(
             gsp_id=0,
             forecast_horizon_minutes=forecast_horizon_minutes,
         )
+
+    for gps_id in range(0, n_gsps + 1):
+        make_pvlive_mae(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)

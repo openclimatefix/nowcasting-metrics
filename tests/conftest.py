@@ -112,6 +112,27 @@ def gsp_yields(db_session):
 
 
 @pytest.fixture
+def gsp_yields_inday(db_session):
+    dt1 = datetime(2022, 1, 1, 0, 30)
+    dt2 = datetime(2022, 1, 1, 1)
+
+    for gsp_id in range(0, 6):
+
+        location = get_location(session=db_session, gsp_id=gsp_id)
+
+        gsp_yield_1 = GSPYield(
+            datetime_utc=dt1, solar_generation_kw=2000, regime="in-day"
+        ).to_orm()
+        gsp_yield_2 = GSPYield(
+            datetime_utc=dt2, solar_generation_kw=2000, regime="in-day"
+        ).to_orm()
+        gsp_yield_1.location = location
+        gsp_yield_2.location = location
+
+        db_session.add_all([gsp_yield_1, gsp_yield_2])
+
+
+@pytest.fixture
 def datetime_interval():
 
     return DatetimeInterval(

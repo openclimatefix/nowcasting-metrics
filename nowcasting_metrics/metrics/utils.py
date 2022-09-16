@@ -8,6 +8,7 @@ from nowcasting_datamodel.models import (
     LocationSQL,
 )
 from sqlalchemy import text
+from sqlalchemy.orm.session import Session
 
 
 def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
@@ -86,3 +87,29 @@ def make_gsp_sub_query(datetime_interval, gsp_id, session):
     sub_query_gsp = sub_query_gsp.filter(GSPYieldSQL.regime == "day-after")
     sub_query_gsp = sub_query_gsp.subquery()
     return sub_query_gsp
+
+
+def make_pvlive_subquery(
+    session: Session, datetime_interval: DatetimeInterval, regime: str, gsp_id: int
+):
+    """
+    make PV live query
+
+    :param session: database sessions
+    :param datetime_interval: which date interval to filer on
+    :param regime: which regime to filter on
+    :param gsp_id: which gsp_id to filer on
+    """
+
+    query = session.query(GSPYieldSQL)
+
+    # sub query for in-day
+    query = query.filter(GSPYieldSQL.datetime_utc >= datetime_interval.start_datetime_utc)
+    query = query.filter(GSPYieldSQL.datetime_utc < datetime_interval.end_datetime_utc)
+    query = query.filter(GSPYieldSQL.regime == regime)
+
+    # filter on location
+    query = query.join(LocationSQL)
+    query = query.filter(LocationSQL.gsp_id == gsp_id)
+
+    return query
