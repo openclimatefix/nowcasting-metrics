@@ -56,5 +56,3 @@ Then run the app.
 python nowcasting_metrics/app.py --n-gsps=10
 ```
 You will need to set 'DB_URL'
-
-

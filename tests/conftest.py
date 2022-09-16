@@ -1,15 +1,13 @@
 import os
+from datetime import datetime, timedelta
 
 import pytest
-from datetime import datetime, timedelta
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
-
-from nowcasting_datamodel.read.read import get_location
-
 from nowcasting_datamodel.models.gsp import GSPYield
-from nowcasting_datamodel.models.models import ForecastValueLatestSQL, ForecastValueSQL, ForecastSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
+from nowcasting_datamodel.models.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
+from nowcasting_datamodel.read.read import get_location
 
 
 @pytest.fixture
@@ -120,12 +118,8 @@ def gsp_yields_inday(db_session):
 
         location = get_location(session=db_session, gsp_id=gsp_id)
 
-        gsp_yield_1 = GSPYield(
-            datetime_utc=dt1, solar_generation_kw=2000, regime="in-day"
-        ).to_orm()
-        gsp_yield_2 = GSPYield(
-            datetime_utc=dt2, solar_generation_kw=2000, regime="in-day"
-        ).to_orm()
+        gsp_yield_1 = GSPYield(datetime_utc=dt1, solar_generation_kw=2000, regime="in-day").to_orm()
+        gsp_yield_2 = GSPYield(datetime_utc=dt2, solar_generation_kw=2000, regime="in-day").to_orm()
         gsp_yield_1.location = location
         gsp_yield_2.location = location
 

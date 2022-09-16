@@ -1,11 +1,10 @@
 from nowcasting_metrics.metrics.mae import (
-    make_mae_one_gsp,
     make_mae,
     make_mae_all_gsp,
+    make_mae_one_gsp,
     make_mae_one_gsp_with_forecast_horizon,
-    make_pvlive_mae
+    make_pvlive_mae,
 )
-
 
 # def test_make_mae(db_session, gsp_yields, forecast_values_latest, datetime_interval):
 #
@@ -49,9 +48,9 @@ from nowcasting_metrics.metrics.mae import (
 #     )
 
 
-def test_make_pvlive_mae(db_session, gsp_yields, gsp_yields_inday,datetime_interval):
+def test_make_pvlive_mae(db_session, gsp_yields, gsp_yields_inday, datetime_interval):
 
-    value, n = make_pvlive_mae(session=db_session,datetime_interval=datetime_interval,gsp_id=0)
+    value, n = make_pvlive_mae(session=db_session, datetime_interval=datetime_interval, gsp_id=0)
 
     assert n == 2
     assert value == 1.0  # (2-1)*0.5 + (2-1)*0.5
