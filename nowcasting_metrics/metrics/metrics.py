@@ -3,7 +3,7 @@
 from nowcasting_datamodel.read.read_metric import get_metric
 
 from nowcasting_metrics.metrics.mae import latest_mae, mae_all_gsps, pvlive_mae
-from nowcasting_metrics.metrics.rmse import latest_rmse, rmse_all_gsps, pvlive_rmse
+from nowcasting_metrics.metrics.rmse import latest_rmse, pvlive_rmse, rmse_all_gsps
 
 all_metrics = [latest_mae, mae_all_gsps, latest_rmse, rmse_all_gsps, pvlive_mae, pvlive_rmse]
 
