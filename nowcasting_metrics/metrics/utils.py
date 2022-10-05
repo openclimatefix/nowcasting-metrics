@@ -42,7 +42,7 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     :return: sub query
     """
     # make forecast sub query
-    sub_query_forecast = session.query(ForecastValueSQL.id)
+    sub_query_forecast = session.query(ForecastValueSQL.uuid)
     sub_query_forecast = sub_query_forecast.distinct(ForecastValueSQL.target_time)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.location)
