@@ -6,7 +6,7 @@ from nowcasting_datamodel import N_GSP
 from nowcasting_datamodel.models import Metric
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.models.models import ForecastValueLatestSQL, ForecastValueSQL
+from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
