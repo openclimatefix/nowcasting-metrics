@@ -6,7 +6,7 @@ from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.models.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
+from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 
 
@@ -17,13 +17,14 @@ def db_connection():
     os.environ["DB_URL"] = url
 
     connection = DatabaseConnection(url=url)
-    Base_Forecast.metadata.create_all(connection.engine)
+    connection.create_all()
+  
     Base_PV.metadata.create_all(connection.engine)
 
     yield connection
 
-    Base_Forecast.metadata.drop_all(connection.engine)
     Base_PV.metadata.drop_all(connection.engine)
+    connection.drop_all()
 
 
 @pytest.fixture(scope="function", autouse=True)

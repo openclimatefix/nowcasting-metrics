@@ -3,10 +3,9 @@ import logging
 from typing import Optional, Union
 
 from nowcasting_datamodel import N_GSP
-from nowcasting_datamodel.models import Metric
+from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSQL, Metric
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
@@ -124,7 +123,7 @@ def make_rmse_one_gsp_with_forecast_horizon(
     # make full query
     query = make_rmse_query(session, model=ForecastValueSQL)
 
-    query = query.filter(ForecastValueSQL.id.in_(sub_query_forecast))
+    query = query.filter(ForecastValueSQL.uuid.in_(sub_query_forecast))
     query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
     query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSQL.target_time)
     results = query.all()
