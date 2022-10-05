@@ -1,2 +1,2 @@
-nowcasting_datamodel==1.1.33
+nowcasting_datamodel==1.1.37
 pytest
