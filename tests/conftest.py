@@ -6,7 +6,7 @@ from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.models.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
+from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 
 
