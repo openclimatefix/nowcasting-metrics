@@ -121,7 +121,7 @@ def make_mae_one_gsp_with_forecast_horizon(
     # make full query
     query = make_mae_query(session, model=ForecastValueSQL)
 
-    query = query.filter(ForecastValueSQL.id.in_(sub_query_forecast))
+    query = query.filter(ForecastValueSQL.uuid.in_(sub_query_forecast))
     query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
     query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSQL.target_time)
     results = query.all()
