@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 
 import pytest
 from nowcasting_datamodel.connection import DatabaseConnection
+from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 
 
@@ -18,7 +18,7 @@ def db_connection():
 
     connection = DatabaseConnection(url=url)
     connection.create_all()
-  
+
     Base_PV.metadata.create_all(connection.engine)
 
     yield connection
