@@ -41,12 +41,12 @@ repos:
             "nowcasting_metrics",
           ]
   - repo: https://github.com/PyCQA/isort
-    rev: 5.10.1
+    rev: 5.11.4
     hooks:
       - id: isort
         args: [--profile, black, --line-length, "100", "nowcasting_metrics"]
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 22.12.0
     hooks:
       - id: black
         args: [--line-length, "100"]
