@@ -49,7 +49,6 @@ from nowcasting_metrics.metrics.mae import (
 
 
 def test_make_pvlive_mae(db_session, gsp_yields, gsp_yields_inday, datetime_interval):
-
     value, n = make_pvlive_mae(session=db_session, datetime_interval=datetime_interval, gsp_id=0)
 
     assert n == 2
