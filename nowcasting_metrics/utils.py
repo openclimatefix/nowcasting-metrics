@@ -1,5 +1,6 @@
 """ General util functions """
 import logging
+import datetime
 from typing import Optional
 
 from nowcasting_datamodel.models.gsp import LocationSQL
@@ -17,6 +18,7 @@ def save_metric_value_to_database(
     datetime_interval: DatetimeInterval,
     location: Optional[LocationSQL] = None,
     forecast_horizon_minutes: Optional[int] = None,
+    time_of_day: Optional[datetime.time] = None,
 ):
     """
     Save one metric value to the database
@@ -28,7 +30,7 @@ def save_metric_value_to_database(
     :param datetime_interval: datetime interval for the metric
     :param location: location object of the metric value
     :param: forecast_horizon_minutes, the forecast horizon of the forecast. This is optional.
-    :return:
+    :param: time_of_day, the time of day of the forecast. This is optional.
     """
 
     if value is None:
@@ -61,6 +63,9 @@ def save_metric_value_to_database(
 
         if location is not None:
             metric_value_sql.location = location
+
+        if time_of_day is not None:
+            metric_value_sql.time_of_day = time_of_day
 
         session.add(metric_value_sql)
         session.commit()

@@ -22,6 +22,7 @@ from nowcasting_datamodel.models.metric import DatetimeInterval
 
 import nowcasting_metrics
 from nowcasting_metrics.metrics.mae import make_mae
+from nowcasting_metrics.metrics.me import make_me
 from nowcasting_metrics.metrics.metrics import check_metrics_in_database
 from nowcasting_metrics.metrics.rmse import make_rmse
 
@@ -97,6 +98,18 @@ def app(
 
         # run daily RMSE
         make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+
+        # get start and end datetime for 1 week ago
+        start_datetime = datetime_now - timedelta(days=7)
+        start_datetime = datetime.combine(start_datetime, datetime.min.time())
+        end_datetime = start_datetime + timedelta(days=7)
+        datetime_interval = DatetimeInterval(
+            start_datetime_utc=start_datetime, end_datetime_utc=end_datetime
+        )
+        logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
+
+        # getting half hour metrics
+        make_me(session=session,datetime_interval=datetime_interval)
 
         # save values to database
         session.commit()
