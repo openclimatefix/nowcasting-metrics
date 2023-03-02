@@ -14,7 +14,7 @@ def test_make_me_forecast_horizon(db_session, gsp_yields, forecast_values, datet
         time_of_day=datetime.time(0, 30, 0),
     )
 
-    assert value == 1.5 + 60(64 - 1) * 0.5
+    assert value == 60  # (61 - 1)
     assert n == 1
 
 

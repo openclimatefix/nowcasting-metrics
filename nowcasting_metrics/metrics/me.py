@@ -74,7 +74,7 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
         value=value,
         number_of_data_points=number_of_data_points,
         datetime_interval=datetime_interval,
-        time_of_dya=time_of_day,
+        time_of_day=time_of_day,
         metric=me_hh,
         location=get_location(gsp_id=gsp_id, session=session),
         forecast_horizon_minutes=forecast_horizon_minutes,
@@ -94,7 +94,9 @@ def make_me_query(
     :return: query
     """
     query = session.query(
-        func.avg(model.expected_power_generation_megawatts - GSPYieldSQL.solar_generation_kw / 100),
+        func.avg(
+            model.expected_power_generation_megawatts - GSPYieldSQL.solar_generation_kw / 1000
+        ),
         func.count(model.expected_power_generation_megawatts),
     )
     return query
