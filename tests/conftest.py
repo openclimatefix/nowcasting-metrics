@@ -12,7 +12,6 @@ from nowcasting_datamodel.read.read import get_location
 
 @pytest.fixture
 def db_connection():
-
     url = os.getenv("DB_URL", "sqlite:///test.db")
     os.environ["DB_URL"] = url
 
@@ -39,12 +38,10 @@ def db_session(db_connection):
 
 @pytest.fixture
 def forecast_values_latest(db_session):
-
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         forecast_values_latest_1 = ForecastValueLatestSQL(
             target_time=dt1, expected_power_generation_megawatts=1, gsp_id=gsp_id
         )
@@ -57,16 +54,13 @@ def forecast_values_latest(db_session):
 
 @pytest.fixture
 def forecast_values(db_session):
-
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         location = get_location(gsp_id=gsp_id, session=db_session)
 
         for forecast_horizon_minutes in range(0, 240, 30):
-
             created_utc_1 = dt1 - timedelta(minutes=forecast_horizon_minutes + 15)
             created_utc_2 = dt2 - timedelta(minutes=forecast_horizon_minutes + 15)
 
@@ -95,7 +89,6 @@ def gsp_yields(db_session):
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         location = get_location(session=db_session, gsp_id=gsp_id)
 
         gsp_yield_1 = GSPYield(
@@ -116,7 +109,6 @@ def gsp_yields_inday(db_session):
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         location = get_location(session=db_session, gsp_id=gsp_id)
 
         gsp_yield_1 = GSPYield(datetime_utc=dt1, solar_generation_kw=2000, regime="in-day").to_orm()
@@ -129,7 +121,6 @@ def gsp_yields_inday(db_session):
 
 @pytest.fixture
 def datetime_interval():
-
     return DatetimeInterval(
         start_datetime_utc=datetime(2022, 1, 1), end_datetime_utc=datetime(2022, 1, 2)
     )

@@ -7,7 +7,6 @@ from nowcasting_metrics.app import app
 
 
 def test_app(db_connection, db_session, gsp_yields, forecast_values_latest, forecast_values):
-
     assert (
         len(
             db_session.query(GSPYieldSQL)

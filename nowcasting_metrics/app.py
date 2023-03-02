@@ -79,7 +79,6 @@ def app(
 
     connection = DatabaseConnection(url=db_url, base=Base_Forecast, echo=False)
     with connection.get_session() as session:
-
         # check metrics are in the datbase
         check_metrics_in_database(session=session)
 
