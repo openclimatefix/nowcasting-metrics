@@ -82,7 +82,8 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
 
 
 def make_me_query(
-    session, model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL
+    session,
+    model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL,
 ):
     """
     Make ME query

@@ -60,9 +60,7 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     sub_query_forecast = sub_query_forecast.filter(
         ForecastValueSevenDaysSQL.target_time <= datetime_interval.end_datetime_utc
     )
-    sub_query_forecast = sub_query_forecast.filter(
-        MLModelSQL.name <= 'cnn'
-    )
+    sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == "cnn")
     sub_query_forecast = sub_query_forecast.order_by(
         ForecastValueSevenDaysSQL.target_time, ForecastValueSevenDaysSQL.created_utc.desc()
     )

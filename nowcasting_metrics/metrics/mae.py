@@ -257,7 +257,8 @@ def make_mae_all_gsp(session: Session, datetime_interval: DatetimeInterval) -> (
 
 
 def make_mae_query(
-    session, model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL
+    session,
+    model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL,
 ):
     """
     Make MAE query

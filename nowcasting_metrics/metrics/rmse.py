@@ -254,7 +254,8 @@ def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval):
 
 
 def make_rmse_query(
-    session, model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL
+    session,
+    model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL,
 ):
     """
     Make rmse query
