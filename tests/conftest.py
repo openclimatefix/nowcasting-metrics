@@ -1,16 +1,15 @@
 from datetime import datetime, timedelta
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from testcontainers.postgres import PostgresContainer
-
+from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.forecast import get_partitions
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from testcontainers.postgres import PostgresContainer
 
 
 @pytest.fixture(scope="session")
@@ -28,7 +27,7 @@ def engine():
         # make partitions
         for partition in partitions:
             if not engine.dialect.has_table(
-                    connection=engine.connect(), table_name=partition.__table__.name
+                connection=engine.connect(), table_name=partition.__table__.name
             ):
                 partition.__table__.create(bind=engine)
 
@@ -58,12 +57,10 @@ def db_session(engine):
 
 @pytest.fixture
 def forecast_values_latest(db_session):
-
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         forecast_values_latest_1 = ForecastValueLatestSQL(
             target_time=dt1, expected_power_generation_megawatts=1, gsp_id=gsp_id
         )
@@ -76,16 +73,13 @@ def forecast_values_latest(db_session):
 
 @pytest.fixture
 def forecast_values(db_session):
-
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         location = get_location(gsp_id=gsp_id, session=db_session)
 
         for forecast_horizon_minutes in range(0, 240, 30):
-
             created_utc_1 = dt1 - timedelta(minutes=forecast_horizon_minutes + 15)
             created_utc_2 = dt2 - timedelta(minutes=forecast_horizon_minutes + 15)
 
@@ -114,7 +108,6 @@ def gsp_yields(db_session):
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         location = get_location(session=db_session, gsp_id=gsp_id)
 
         gsp_yield_1 = GSPYield(
@@ -135,7 +128,6 @@ def gsp_yields_inday(db_session):
     dt2 = datetime(2022, 1, 1, 1)
 
     for gsp_id in range(0, 6):
-
         location = get_location(session=db_session, gsp_id=gsp_id)
 
         gsp_yield_1 = GSPYield(datetime_utc=dt1, solar_generation_kw=2000, regime="in-day").to_orm()
@@ -148,7 +140,6 @@ def gsp_yields_inday(db_session):
 
 @pytest.fixture
 def datetime_interval():
-
     return DatetimeInterval(
         start_datetime_utc=datetime(2022, 1, 1), end_datetime_utc=datetime(2022, 1, 2)
     )
