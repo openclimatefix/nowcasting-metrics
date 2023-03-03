@@ -6,6 +6,7 @@ from nowcasting_datamodel.models import (
     ForecastValueSevenDaysSQL,
     GSPYieldSQL,
     LocationSQL,
+    MLModelSQL,
 )
 from sqlalchemy import text
 from sqlalchemy.orm.session import Session
@@ -46,6 +47,7 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     sub_query_forecast = sub_query_forecast.distinct(ForecastValueSevenDaysSQL.target_time)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.location)
+    sub_query_forecast = sub_query_forecast.join(ForecastSQL.model)
     sub_query_forecast = sub_query_forecast.filter(LocationSQL.gsp_id == gsp_id)
     # this seems to only work for postgres
     sub_query_forecast = sub_query_forecast.filter(
@@ -57,6 +59,9 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     )
     sub_query_forecast = sub_query_forecast.filter(
         ForecastValueSevenDaysSQL.target_time <= datetime_interval.end_datetime_utc
+    )
+    sub_query_forecast = sub_query_forecast.filter(
+        MLModelSQL.name <= 'cnn'
     )
     sub_query_forecast = sub_query_forecast.order_by(
         ForecastValueSevenDaysSQL.target_time, ForecastValueSevenDaysSQL.created_utc.desc()

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSevenDaysSQL
+from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSevenDaysSQL, MLModelSQL
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.forecast import get_partitions
 from nowcasting_datamodel.models.gsp import GSPYield
@@ -72,6 +72,8 @@ def forecast_values(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
+    model = MLModelSQL(name='cnn')
+
     for gsp_id in range(0, 6):
         location = get_location(gsp_id=gsp_id, session=db_session)
 
@@ -93,6 +95,7 @@ def forecast_values(db_session):
             forecast = ForecastSQL(
                 location=location,
                 forecast_values=[forecast_values_1, forecast_values_2],
+                model=model
             )
 
             db_session.add(forecast)
