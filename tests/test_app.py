@@ -6,7 +6,7 @@ from nowcasting_datamodel.models import ForecastValueLatestSQL
 from nowcasting_metrics.app import app
 
 
-def test_app(db_connection, db_session, gsp_yields, forecast_values_latest, forecast_values):
+def test_app(engine, db_session, gsp_yields, forecast_values_latest, forecast_values):
 
     assert (
         len(
@@ -30,7 +30,7 @@ def test_app(db_connection, db_session, gsp_yields, forecast_values_latest, fore
 
     runner = CliRunner()
     response = runner.invoke(
-        app, ["--db-url", db_connection.url, "--n-gsps", 5, "--datetime-now", "2022-01-02"]
+        app, ["--db-url", engine.url, "--n-gsps", 5, "--datetime-now", "2022-01-02"]
     )
     assert response.exit_code == 0, response.exception
 

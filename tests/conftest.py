@@ -1,40 +1,59 @@
-import os
 from datetime import datetime, timedelta
 
 import pytest
-from nowcasting_datamodel.connection import DatabaseConnection
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
+from testcontainers.postgres import PostgresContainer
+
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
+from nowcasting_datamodel.models.forecast import get_partitions
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 
 
-@pytest.fixture
-def db_connection():
+@pytest.fixture(scope="session")
+def engine():
+    """Database engine fixture."""
+    with PostgresContainer("postgres:14.5") as postgres:
+        # TODO need to setup postgres database with docker
+        url = postgres.get_connection_url()
+        engine = create_engine(url)
+        Base_Forecast.metadata.create_all(engine)
+        Base_PV.metadata.create_all(engine)
 
-    url = os.getenv("DB_URL", "sqlite:///test.db")
-    os.environ["DB_URL"] = url
+        partitions = get_partitions(2019, 1, 2022, 7)
 
-    connection = DatabaseConnection(url=url)
-    connection.create_all()
-  
-    Base_PV.metadata.create_all(connection.engine)
+        # make partitions
+        for partition in partitions:
+            if not engine.dialect.has_table(
+                    connection=engine.connect(), table_name=partition.__table__.name
+            ):
+                partition.__table__.create(bind=engine)
 
-    yield connection
-
-    Base_PV.metadata.drop_all(connection.engine)
-    connection.drop_all()
+        yield engine
 
 
-@pytest.fixture(scope="function", autouse=True)
-def db_session(db_connection):
-    """Creates a new database session for a test."""
+@pytest.fixture()
+def db_session(engine):
+    """Return a sqlalchemy session, which tears down everything properly post-test."""
+    connection = engine.connect()
+    # begin the nested transaction
+    transaction = connection.begin()
+    # use the connection with the already started transaction
 
-    with db_connection.get_session() as s:
-        s.begin()
-        yield s
-        s.rollback()
+    with Session(bind=connection) as session:
+        yield session
+
+        session.close()
+        # roll back the broader transaction
+        transaction.rollback()
+        # put back the connection to the connection pool
+        connection.close()
+        session.flush()
+
+    engine.dispose()
 
 
 @pytest.fixture
