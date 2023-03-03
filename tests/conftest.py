@@ -9,6 +9,8 @@ from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
 
+from nowcasting_datamodel.models.forecast import get_partitions
+
 
 @pytest.fixture
 def db_connection():
@@ -20,11 +22,25 @@ def db_connection():
     connection.create_all()
   
     Base_PV.metadata.create_all(connection.engine)
+    partitions = get_partitions(2022, 1, 2022, 2)
+
+    # make partitions
+    for partition in partitions:
+        if not connection.engine.dialect.has_table(
+                connection=connection.engine.connect(), table_name=partition.__table__.name
+        ):
+            partition.__table__.create(bind=connection.engine)
 
     yield connection
 
-    Base_PV.metadata.drop_all(connection.engine)
+    for partition in partitions:
+        if not connection.engine.dialect.has_table(
+                connection=connection.engine.connect(), table_name=partition.__table__.name
+        ):
+            partition.__table__.drop(bind=connection.engine)
+
     connection.drop_all()
+    Base_PV.metadata.drop_all(connection.engine)
 
 
 @pytest.fixture(scope="function", autouse=True)

@@ -109,7 +109,7 @@ def app(
         logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
         # getting half hour metrics
-        make_me(session=session,datetime_interval=datetime_interval)
+        make_me(session=session, datetime_interval=datetime_interval)
 
         # save values to database
         session.commit()
