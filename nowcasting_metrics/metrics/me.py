@@ -116,9 +116,9 @@ def make_me(
     """
 
     # loop over forecast horizons and each half hour
-    for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
-        for hour in range(0, 24):
-            for minute in [0, 30]:
+    for hour in range(0, 24):
+        for minute in [0, 30]:
+            for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
                 make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
                     session=session,
                     datetime_interval=datetime_interval,

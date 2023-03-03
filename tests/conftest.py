@@ -94,7 +94,7 @@ def forecast_values(db_session):
 
             forecast = ForecastSQL(
                 location=location,
-                forecast_values=[forecast_values_1, forecast_values_2],
+                forecast_values_last_seven_days=[forecast_values_1, forecast_values_2],
                 model=model
             )
 
