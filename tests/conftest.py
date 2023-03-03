@@ -4,12 +4,11 @@ from datetime import datetime, timedelta
 import pytest
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
+from nowcasting_datamodel.models.forecast import get_partitions
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
 from nowcasting_datamodel.read.read import get_location
-
-from nowcasting_datamodel.models.forecast import get_partitions
 
 
 @pytest.fixture
@@ -27,7 +26,7 @@ def db_connection():
     # make partitions
     for partition in partitions:
         if not connection.engine.dialect.has_table(
-                connection=connection.engine.connect(), table_name=partition.__table__.name
+            connection=connection.engine.connect(), table_name=partition.__table__.name
         ):
             partition.__table__.create(bind=connection.engine)
 
@@ -35,7 +34,7 @@ def db_connection():
 
     for partition in partitions:
         if not connection.engine.dialect.has_table(
-                connection=connection.engine.connect(), table_name=partition.__table__.name
+            connection=connection.engine.connect(), table_name=partition.__table__.name
         ):
             partition.__table__.drop(bind=connection.engine)
 

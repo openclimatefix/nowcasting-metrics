@@ -1,4 +1,5 @@
 import datetime
+
 from nowcasting_metrics.metrics.me import (
     make_me,
     make_me_one_gsp_with_forecast_horizon_and_one_half_hour,
@@ -21,7 +22,6 @@ def test_make_me_forecast_horizon(db_session, gsp_yields, forecast_values, datet
 def test_make_mae_five_gsp(
     db_session, gsp_yields, forecast_values_latest, forecast_values, datetime_interval
 ):
-
     make_me(
         session=db_session,
         datetime_interval=datetime_interval,
