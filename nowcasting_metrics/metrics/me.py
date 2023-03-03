@@ -3,7 +3,7 @@ import datetime
 import logging
 from typing import Optional, Union
 
-from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSQL, Metric
+from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSevenDaysSQL, Metric
 from nowcasting_datamodel.models.gsp import GSPYieldSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
@@ -48,11 +48,11 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
     )
 
     # make full query
-    query = make_me_query(session, model=ForecastValueSQL)
+    query = make_me_query(session, model=ForecastValueSevenDaysSQL)
 
-    query = query.filter(ForecastValueSQL.uuid.in_(sub_query_forecast))
+    query = query.filter(ForecastValueSevenDaysSQL.uuid.in_(sub_query_forecast))
     query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSQL.target_time)
+    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
 
     # filter by time of day
     query = query.filter(cast(GSPYieldSQL.datetime_utc, Time) == time_of_day)
@@ -82,7 +82,7 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
 
 
 def make_me_query(
-    session, model: Union[ForecastValueSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL
+    session, model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL
 ):
     """
     Make ME query
