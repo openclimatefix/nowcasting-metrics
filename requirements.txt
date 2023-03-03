@@ -1,3 +1,3 @@
-nowcasting_datamodel==1.1.37
+nowcasting_datamodel==1.1.68
 testcontainers
 pytest
