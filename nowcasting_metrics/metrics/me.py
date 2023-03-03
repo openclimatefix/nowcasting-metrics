@@ -11,10 +11,7 @@ from sqlalchemy import Time, cast
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
-from nowcasting_metrics.metrics.utils import (
-    make_forecast_sub_query,
-    make_gsp_sub_query,
-)
+from nowcasting_metrics.metrics.utils import make_forecast_sub_query, make_gsp_sub_query
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)

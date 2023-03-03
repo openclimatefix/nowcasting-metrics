@@ -1,6 +1,6 @@
 """ General util functions """
-import logging
 import datetime
+import logging
 from typing import Optional
 
 from nowcasting_datamodel.models.gsp import LocationSQL
