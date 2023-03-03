@@ -3,9 +3,10 @@ from nowcasting_datamodel.models import (
     DatetimeInterval,
     ForecastSQL,
     ForecastValueLatestSQL,
-    ForecastValueSQL,
+    ForecastValueSevenDaysSQL,
     GSPYieldSQL,
     LocationSQL,
+    MLModelSQL,
 )
 from sqlalchemy import text
 from sqlalchemy.orm.session import Session
@@ -42,24 +43,26 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     :return: sub query
     """
     # make forecast sub query
-    sub_query_forecast = session.query(ForecastValueSQL.uuid)
-    sub_query_forecast = sub_query_forecast.distinct(ForecastValueSQL.target_time)
+    sub_query_forecast = session.query(ForecastValueSevenDaysSQL.uuid)
+    sub_query_forecast = sub_query_forecast.distinct(ForecastValueSevenDaysSQL.target_time)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.location)
+    sub_query_forecast = sub_query_forecast.join(ForecastSQL.model)
     sub_query_forecast = sub_query_forecast.filter(LocationSQL.gsp_id == gsp_id)
     # this seems to only work for postgres
     sub_query_forecast = sub_query_forecast.filter(
-        ForecastValueSQL.target_time - ForecastValueSQL.created_utc
+        ForecastValueSevenDaysSQL.target_time - ForecastValueSevenDaysSQL.created_utc
         >= text(f"interval '{forecast_horizon_minutes} minute'")
     )
     sub_query_forecast = sub_query_forecast.filter(
-        ForecastValueSQL.target_time > datetime_interval.start_datetime_utc
+        ForecastValueSevenDaysSQL.target_time > datetime_interval.start_datetime_utc
     )
     sub_query_forecast = sub_query_forecast.filter(
-        ForecastValueSQL.target_time <= datetime_interval.end_datetime_utc
+        ForecastValueSevenDaysSQL.target_time <= datetime_interval.end_datetime_utc
     )
+    sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == "cnn")
     sub_query_forecast = sub_query_forecast.order_by(
-        ForecastValueSQL.target_time, ForecastValueSQL.created_utc.desc()
+        ForecastValueSevenDaysSQL.target_time, ForecastValueSevenDaysSQL.created_utc.desc()
     )
     sub_query_forecast = sub_query_forecast.subquery()
     return sub_query_forecast

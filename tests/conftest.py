@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from nowcasting_datamodel.connection import DatabaseConnection
-from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSQL
+from nowcasting_datamodel.models import ForecastSQL, ForecastValueLatestSQL, ForecastValueSevenDaysSQL, MLModelSQL
 from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.forecast import get_partitions
 from nowcasting_datamodel.models.gsp import GSPYield
@@ -72,6 +72,8 @@ def forecast_values(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
+    model = MLModelSQL(name='cnn')
+
     for gsp_id in range(0, 6):
         location = get_location(gsp_id=gsp_id, session=db_session)
 
@@ -79,12 +81,12 @@ def forecast_values(db_session):
             created_utc_1 = dt1 - timedelta(minutes=forecast_horizon_minutes + 15)
             created_utc_2 = dt2 - timedelta(minutes=forecast_horizon_minutes + 15)
 
-            forecast_values_1 = ForecastValueSQL(
+            forecast_values_1 = ForecastValueSevenDaysSQL(
                 target_time=dt1,
                 expected_power_generation_megawatts=1 + forecast_horizon_minutes,
                 created_utc=created_utc_1,
             )
-            forecast_values_2 = ForecastValueSQL(
+            forecast_values_2 = ForecastValueSevenDaysSQL(
                 target_time=dt2,
                 expected_power_generation_megawatts=4 + forecast_horizon_minutes,
                 created_utc=created_utc_2,
@@ -92,7 +94,8 @@ def forecast_values(db_session):
 
             forecast = ForecastSQL(
                 location=location,
-                forecast_values=[forecast_values_1, forecast_values_2],
+                forecast_values_last_seven_days=[forecast_values_1, forecast_values_2],
+                model=model
             )
 
             db_session.add(forecast)
