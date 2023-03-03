@@ -18,7 +18,7 @@ def engine():
     with PostgresContainer("postgres:14.5") as postgres:
         # TODO need to setup postgres database with docker
         url = postgres.get_connection_url()
-        engine = create_engine(url)
+        engine = create_engine(url, pool_size=100)
         Base_Forecast.metadata.create_all(engine)
         Base_PV.metadata.create_all(engine)
 
