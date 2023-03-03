@@ -62,8 +62,9 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
     value = results[0][0]
 
     logger.debug(
-        f"Found MAE of {value} from {number_of_data_points} "
-        f"data points for forecast horizon {forecast_horizon_minutes} for {gsp_id=}."
+        f"Found ME of {value} from {number_of_data_points} "
+        f"data points for forecast horizon {forecast_horizon_minutes} for "
+        f"{gsp_id=} and {time_of_day=}."
     )
 
     save_metric_value_to_database(
