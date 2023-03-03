@@ -28,7 +28,6 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
     datetime_interval: DatetimeInterval,
     gsp_id: int,
     forecast_horizon_minutes: int,
-    time_of_day: datetime.time,
 ) -> (int, int):
     """
     Calculate the ME for one GSP for a forecast horizon for one half hour, and save to database
@@ -38,7 +37,6 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
     :param gsp_id: the gsp id
     :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
         made 60 minutes before target time
-    :param time_of_day: the time of the day
     :return: 1. the MAE, 2. the number of data points
     """
 
@@ -54,31 +52,33 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
     query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
     query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
 
-    # filter by time of day
-    query = query.filter(cast(GSPYieldSQL.datetime_utc, Time) == time_of_day)
+    # group by by time of day
+    query = query.group_by(cast(GSPYieldSQL.datetime_utc, Time))
     results = query.all()
 
-    number_of_data_points = results[0][1]
-    value = results[0][0]
+    for result in results:
+        number_of_data_points = result[1]
+        value = result[0]
+        time_of_day = result[2]
 
-    logger.debug(
-        f"Found ME of {value} from {number_of_data_points} "
-        f"data points for forecast horizon {forecast_horizon_minutes} for "
-        f"{gsp_id=} and {time_of_day=}."
+        logger.debug(
+            f"Found ME of {value} from {number_of_data_points} "
+            f"data points for forecast horizon {forecast_horizon_minutes} for "
+            f"{gsp_id=} and {time_of_day=}."
+        )
+
+        save_metric_value_to_database(
+            session=session,
+            value=value,
+            number_of_data_points=number_of_data_points,
+            datetime_interval=datetime_interval,
+            time_of_day=time_of_day,
+            metric=me_hh,
+            location=get_location(gsp_id=gsp_id, session=session),
+            forecast_horizon_minutes=forecast_horizon_minutes,
     )
 
-    save_metric_value_to_database(
-        session=session,
-        value=value,
-        number_of_data_points=number_of_data_points,
-        datetime_interval=datetime_interval,
-        time_of_day=time_of_day,
-        metric=me_hh,
-        location=get_location(gsp_id=gsp_id, session=session),
-        forecast_horizon_minutes=forecast_horizon_minutes,
-    )
-
-    return value, number_of_data_points
+    return results
 
 
 def make_me_query(
@@ -97,6 +97,7 @@ def make_me_query(
             model.expected_power_generation_megawatts - GSPYieldSQL.solar_generation_kw / 1000
         ),
         func.count(model.expected_power_generation_megawatts),
+        cast(GSPYieldSQL.datetime_utc, Time),
     )
     return query
 
@@ -116,14 +117,11 @@ def make_me(
         The maximum forecast horizon we should look at, default is 8 hours
     """
 
-    # loop over forecast horizons and each half hour
-    for hour in range(0, 24):
-        for minute in [0, 30]:
-            for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
-                make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
-                    session=session,
-                    datetime_interval=datetime_interval,
-                    gsp_id=0,
-                    time_of_day=datetime.time(hour, minute, 0),
-                    forecast_horizon_minutes=forecast_horizon_minutes,
-                )
+    # loop over forecast horizons
+    for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
+        make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
+            session=session,
+            datetime_interval=datetime_interval,
+            gsp_id=0,
+            forecast_horizon_minutes=forecast_horizon_minutes,
+        )

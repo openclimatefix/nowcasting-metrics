@@ -7,13 +7,14 @@ from nowcasting_metrics.metrics.me import (
 
 
 def test_make_me_forecast_horizon(db_session, gsp_yields, forecast_values, datetime_interval):
-    value, n = make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
+    results = make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
         session=db_session,
         datetime_interval=datetime_interval,
         gsp_id=1,
         forecast_horizon_minutes=60,
-        time_of_day=datetime.time(0, 30, 0),
     )
+
+    value,n, time = results[0]
 
     assert value == 60  # (61 - 1)
     assert n == 1
