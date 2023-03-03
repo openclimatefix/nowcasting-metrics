@@ -75,7 +75,7 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
             metric=me_hh,
             location=get_location(gsp_id=gsp_id, session=session),
             forecast_horizon_minutes=forecast_horizon_minutes,
-    )
+        )
 
     return results
 
