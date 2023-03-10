@@ -19,6 +19,10 @@ Repo to automatically run metrics on the nowcasting forecast
 - We also calculate RMSE for different forecast horizon, from 0 to 8 hours, for the national forecast.
 - The RMSE for PVLive initial and update estimate is also calculated for all GSPs
 
+### ME
+
+- The ME is calculated for National only from the last week. It is grouped by `time of day` and `forecast_horizon`. 
+
 ## Tests
 ### Local pytest
 
