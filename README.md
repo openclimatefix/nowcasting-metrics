@@ -35,6 +35,7 @@ To run local pytests you need to
 
 TO run tests use the following command
 ```bash
+docker stop $(docker ps -a -q)
 docker-compose -f test-docker-compose.yml build
 docker-compose -f test-docker-compose.yml run nowcasting_metrics
 ```

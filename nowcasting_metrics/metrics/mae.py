@@ -100,6 +100,7 @@ def make_mae_one_gsp_with_forecast_horizon(
     datetime_interval: DatetimeInterval,
     gsp_id: int,
     forecast_horizon_minutes: int,
+    use_adjuster: bool = False,
 ) -> (int, int):
     """
     Calculate the MAE for one GSP for a forecast horizon, and save to database
@@ -109,6 +110,7 @@ def make_mae_one_gsp_with_forecast_horizon(
     :param gsp_id: the gsp id
     :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
         made 60 minutes before target time
+    :param use_adjuster: option to use the adjuster or not.
     :return: 1. the MAE, 2. the number of data points
     """
 
@@ -118,7 +120,7 @@ def make_mae_one_gsp_with_forecast_horizon(
     )
 
     # make full query
-    query = make_mae_query(session, model=ForecastValueSevenDaysSQL)
+    query = make_mae_query(session, model=ForecastValueSevenDaysSQL, use_adjuster=use_adjuster)
 
     query = query.filter(ForecastValueSevenDaysSQL.uuid.in_(sub_query_forecast))
     query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
@@ -259,20 +261,22 @@ def make_mae_all_gsp(session: Session, datetime_interval: DatetimeInterval) -> (
 def make_mae_query(
     session,
     model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL,
+    use_adjuster: bool = False,
 ):
     """
     Make MAE query
 
     :param session: database sessions
     :param model: either ForecastValueSQL or ForecastValueLatestSQL
+    :param use_adjuster: option to use adjuster or not
     :return: query
     """
+    forecast = model.expected_power_generation_megawatts
+    if use_adjuster:
+        forecast = forecast - model.adjust_mw
+
     query = session.query(
-        func.avg(
-            func.abs(
-                model.expected_power_generation_megawatts - GSPYieldSQL.solar_generation_kw / 1000
-            )
-        ),
+        func.avg(func.abs(forecast - GSPYieldSQL.solar_generation_kw / 1000)),
         func.count(model.expected_power_generation_megawatts),
     )
     return query
