@@ -26,7 +26,7 @@ def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query
     return query
 
 
-def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id, session):
+def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id, session, model=ForecastValueSevenDaysSQL):
     """
     Make SQL sub query to get latest forecast, given a forecast horizon
 
@@ -43,26 +43,29 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     :return: sub query
     """
     # make forecast sub query
-    sub_query_forecast = session.query(ForecastValueSevenDaysSQL.uuid)
-    sub_query_forecast = sub_query_forecast.distinct(ForecastValueSevenDaysSQL.target_time)
+    sub_query_forecast = session.query(model.uuid)
+    sub_query_forecast = sub_query_forecast.distinct(model.target_time)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.location)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.model)
     sub_query_forecast = sub_query_forecast.filter(LocationSQL.gsp_id == gsp_id)
     # this seems to only work for postgres
     sub_query_forecast = sub_query_forecast.filter(
-        ForecastValueSevenDaysSQL.target_time - ForecastValueSevenDaysSQL.created_utc
+        model.target_time - model.created_utc
         >= text(f"interval '{forecast_horizon_minutes} minute'")
     )
     sub_query_forecast = sub_query_forecast.filter(
-        ForecastValueSevenDaysSQL.target_time > datetime_interval.start_datetime_utc
+        model.created_utc > datetime_interval.start_datetime_utc
     )
     sub_query_forecast = sub_query_forecast.filter(
-        ForecastValueSevenDaysSQL.target_time <= datetime_interval.end_datetime_utc
+        model.target_time > datetime_interval.start_datetime_utc
+    )
+    sub_query_forecast = sub_query_forecast.filter(
+        model.target_time <= datetime_interval.end_datetime_utc
     )
     sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == "cnn")
     sub_query_forecast = sub_query_forecast.order_by(
-        ForecastValueSevenDaysSQL.target_time, ForecastValueSevenDaysSQL.created_utc.desc()
+        model.target_time, model.created_utc.desc()
     )
     sub_query_forecast = sub_query_forecast.subquery()
     return sub_query_forecast
