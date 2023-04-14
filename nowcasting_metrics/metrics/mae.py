@@ -1,9 +1,13 @@
-""" Function to make MAE """
+""" Function to make MAE
+
+
+
+"""
 import logging
 from typing import Optional, Union
 
 from nowcasting_datamodel import N_GSP
-from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSevenDaysSQL, Metric
+from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSevenDaysSQL, Metric, ForecastValueSQL
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
@@ -100,6 +104,8 @@ def make_mae_one_gsp_with_forecast_horizon(
     datetime_interval: DatetimeInterval,
     gsp_id: int,
     forecast_horizon_minutes: int,
+    use_adjuster: bool = False,
+    model: Optional[Union[ForecastValueSQL, ForecastValueSevenDaysSQL]] = None,
 ) -> (int, int):
     """
     Calculate the MAE for one GSP for a forecast horizon, and save to database
@@ -109,20 +115,25 @@ def make_mae_one_gsp_with_forecast_horizon(
     :param gsp_id: the gsp id
     :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
         made 60 minutes before target time
+    :param use_adjuster: option to use the adjuster or not.
+    :param model: the model to use
     :return: 1. the MAE, 2. the number of data points
     """
 
+    if model is None:
+        model = ForecastValueSevenDaysSQL
+
     sub_query_gsp = make_gsp_sub_query(datetime_interval, gsp_id, session)
     sub_query_forecast = make_forecast_sub_query(
-        datetime_interval, forecast_horizon_minutes, gsp_id, session
+        datetime_interval, forecast_horizon_minutes, gsp_id, session, model=model
     )
 
     # make full query
-    query = make_mae_query(session, model=ForecastValueSevenDaysSQL)
+    query = make_mae_query(session, model=model, use_adjuster=use_adjuster)
 
-    query = query.filter(ForecastValueSevenDaysSQL.uuid.in_(sub_query_forecast))
+    query = query.filter(model.uuid.in_(sub_query_forecast))
     query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
+    query = query.filter(GSPYieldSQL.datetime_utc == model.target_time)
     results = query.all()
 
     number_of_data_points = results[0][1]
@@ -259,20 +270,22 @@ def make_mae_all_gsp(session: Session, datetime_interval: DatetimeInterval) -> (
 def make_mae_query(
     session,
     model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL,
+    use_adjuster: bool = False,
 ):
     """
     Make MAE query
 
     :param session: database sessions
     :param model: either ForecastValueSQL or ForecastValueLatestSQL
+    :param use_adjuster: option to use adjuster or not
     :return: query
     """
+    forecast = model.expected_power_generation_megawatts
+    if use_adjuster:
+        forecast = forecast - model.adjust_mw
+
     query = session.query(
-        func.avg(
-            func.abs(
-                model.expected_power_generation_megawatts - GSPYieldSQL.solar_generation_kw / 1000
-            )
-        ),
+        func.avg(func.abs(forecast - GSPYieldSQL.solar_generation_kw / 1000)),
         func.count(model.expected_power_generation_megawatts),
     )
     return query

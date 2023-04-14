@@ -16,7 +16,7 @@ def db_connection():
     url = os.getenv("DB_URL", "sqlite:///test.db")
     os.environ["DB_URL"] = url
 
-    connection = DatabaseConnection(url=url)
+    connection = DatabaseConnection(url=url, echo=True)
     connection.create_all()
 
     Base_PV.metadata.create_all(connection.engine)
@@ -72,33 +72,34 @@ def forecast_values(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
-    model = MLModelSQL(name='cnn')
+    for model_name in ["cnn", "National_xg"]:
+        model = MLModelSQL(name=model_name)
 
-    for gsp_id in range(0, 6):
-        location = get_location(gsp_id=gsp_id, session=db_session)
+        for gsp_id in range(0, 6):
+            location = get_location(gsp_id=gsp_id, session=db_session)
 
-        for forecast_horizon_minutes in range(0, 240, 30):
-            created_utc_1 = dt1 - timedelta(minutes=forecast_horizon_minutes + 15)
-            created_utc_2 = dt2 - timedelta(minutes=forecast_horizon_minutes + 15)
+            for forecast_horizon_minutes in range(0, 240, 30):
+                created_utc_1 = dt1 - timedelta(minutes=forecast_horizon_minutes + 15)
+                created_utc_2 = dt2 - timedelta(minutes=forecast_horizon_minutes + 15)
 
-            forecast_values_1 = ForecastValueSevenDaysSQL(
-                target_time=dt1,
-                expected_power_generation_megawatts=1 + forecast_horizon_minutes,
-                created_utc=created_utc_1,
-            )
-            forecast_values_2 = ForecastValueSevenDaysSQL(
-                target_time=dt2,
-                expected_power_generation_megawatts=4 + forecast_horizon_minutes,
-                created_utc=created_utc_2,
-            )
+                forecast_values_1 = ForecastValueSevenDaysSQL(
+                    target_time=dt1,
+                    expected_power_generation_megawatts=1 + forecast_horizon_minutes,
+                    created_utc=created_utc_1,
+                )
+                forecast_values_2 = ForecastValueSevenDaysSQL(
+                    target_time=dt2,
+                    expected_power_generation_megawatts=4 + forecast_horizon_minutes,
+                    created_utc=created_utc_2,
+                )
 
-            forecast = ForecastSQL(
-                location=location,
-                forecast_values_last_seven_days=[forecast_values_1, forecast_values_2],
-                model=model
-            )
+                forecast = ForecastSQL(
+                    location=location,
+                    forecast_values_last_seven_days=[forecast_values_1, forecast_values_2],
+                    model=model
+                )
 
-            db_session.add(forecast)
+                db_session.add(forecast)
 
 
 @pytest.fixture
