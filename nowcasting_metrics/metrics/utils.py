@@ -26,7 +26,7 @@ def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query
     return query
 
 
-def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id, session, model=ForecastValueSevenDaysSQL):
+def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id, session, model=ForecastValueSevenDaysSQL, model_name='cnn'):
     """
     Make SQL sub query to get latest forecast, given a forecast horizon
 
@@ -54,8 +54,11 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
         model.target_time - model.created_utc
         >= text(f"interval '{forecast_horizon_minutes} minute'")
     )
+
+    # if the start date is 2023-02-01 and horizon is 60 minutes,
+    # then we want any older forecast than 2023-01-31 23:00:00
     sub_query_forecast = sub_query_forecast.filter(
-        model.created_utc > datetime_interval.start_datetime_utc
+        datetime_interval.start_datetime_utc - model.created_utc < text(f"interval '{forecast_horizon_minutes} minute'")
     )
     sub_query_forecast = sub_query_forecast.filter(
         model.target_time > datetime_interval.start_datetime_utc
@@ -63,7 +66,8 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     sub_query_forecast = sub_query_forecast.filter(
         model.target_time <= datetime_interval.end_datetime_utc
     )
-    sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == "cnn")
+    if model_name is not None:
+        sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == model_name)
     sub_query_forecast = sub_query_forecast.order_by(
         model.target_time, model.created_utc.desc()
     )

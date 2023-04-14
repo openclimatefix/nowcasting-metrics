@@ -19,6 +19,7 @@ def save_metric_value_to_database(
     location: Optional[LocationSQL] = None,
     forecast_horizon_minutes: Optional[int] = None,
     time_of_day: Optional[datetime.time] = None,
+    model_name: Optional[str] = None,
 ):
     """
     Save one metric value to the database
@@ -29,8 +30,9 @@ def save_metric_value_to_database(
     :param metric: the metric object
     :param datetime_interval: datetime interval for the metric
     :param location: location object of the metric value
-    :param: forecast_horizon_minutes, the forecast horizon of the forecast. This is optional.
-    :param: time_of_day, the time of day of the forecast. This is optional.
+    :param forecast_horizon_minutes: the forecast horizon of the forecast. This is optional.
+    :param time_of_day: the time of day of the forecast. This is optional.
+    :param model_name: the model name of the forecast. This is optional.
     """
 
     if value is None:
@@ -66,6 +68,9 @@ def save_metric_value_to_database(
 
         if time_of_day is not None:
             metric_value_sql.time_of_day = time_of_day
+
+        if model_name is not None:
+            metric_value_sql.model_name = model_name
 
         session.add(metric_value_sql)
         session.commit()

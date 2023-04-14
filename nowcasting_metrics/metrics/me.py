@@ -27,6 +27,8 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
     datetime_interval: DatetimeInterval,
     gsp_id: int,
     forecast_horizon_minutes: int,
+    model_name: str = None,
+    save_to_database: bool = True,
 ) -> (int, int):
     """
     Calculate the ME for one GSP for a forecast horizon for one half hour, and save to database
@@ -41,7 +43,11 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
 
     sub_query_gsp = make_gsp_sub_query(datetime_interval, gsp_id, session)
     sub_query_forecast = make_forecast_sub_query(
-        datetime_interval, forecast_horizon_minutes, gsp_id, session
+        datetime_interval=datetime_interval,
+        forecast_horizon_minutes=forecast_horizon_minutes,
+        gsp_id=gsp_id,
+        session=session,
+        model_name=model_name,
     )
 
     # make full query
@@ -65,17 +71,18 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
             f"data points for forecast horizon {forecast_horizon_minutes} for "
             f"{gsp_id=} and {time_of_day=}."
         )
-
-        save_metric_value_to_database(
-            session=session,
-            value=value,
-            number_of_data_points=number_of_data_points,
-            datetime_interval=datetime_interval,
-            time_of_day=time_of_day,
-            metric=me_hh,
-            location=get_location(gsp_id=gsp_id, session=session),
-            forecast_horizon_minutes=forecast_horizon_minutes,
-        )
+        if save_to_database:
+            save_metric_value_to_database(
+                session=session,
+                value=value,
+                number_of_data_points=number_of_data_points,
+                datetime_interval=datetime_interval,
+                time_of_day=time_of_day,
+                metric=me_hh,
+                location=get_location(gsp_id=gsp_id, session=session),
+                forecast_horizon_minutes=forecast_horizon_minutes,
+                model_name=model_name
+            )
 
     return results
 
@@ -104,7 +111,7 @@ def make_me_query(
 def make_me(
     session: Session,
     datetime_interval: DatetimeInterval,
-    max_forecast_horizon_minutes: Optional[int] = 480,
+    max_forecast_horizon_minutes: Optional[dict] = None,
 ):
     """
     Calculate MAE for all GSPs
@@ -116,11 +123,16 @@ def make_me(
         The maximum forecast horizon we should look at, default is 8 hours
     """
 
+    if max_forecast_horizon_minutes is None:
+        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 30*60}
+
     # loop over forecast horizons
-    for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
-        make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
-            session=session,
-            datetime_interval=datetime_interval,
-            gsp_id=0,
-            forecast_horizon_minutes=forecast_horizon_minutes,
-        )
+    for model_name in ["cnn", "National_xg"]:
+        for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes[model_name], 30):
+            make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
+                session=session,
+                datetime_interval=datetime_interval,
+                gsp_id=0,
+                forecast_horizon_minutes=forecast_horizon_minutes,
+                model_name=model_name,
+            )
