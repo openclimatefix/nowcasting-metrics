@@ -38,6 +38,8 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
     :param gsp_id: the gsp id
     :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
         made 60 minutes before target time
+    :param model_name: the model name of the forecast. This is optional.
+    :param save_to_database: if True, save the results to the database
     :return: 1. the MAE, 2. the number of data points
     """
 
@@ -69,7 +71,7 @@ def make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
         logger.debug(
             f"Found ME of {value} from {number_of_data_points} "
             f"data points for forecast horizon {forecast_horizon_minutes} for "
-            f"{gsp_id=} and {time_of_day=}."
+            f"{gsp_id=} and {time_of_day=}. This is for {model_name=}."
         )
         if save_to_database:
             save_metric_value_to_database(
