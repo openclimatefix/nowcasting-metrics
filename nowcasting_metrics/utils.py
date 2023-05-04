@@ -41,9 +41,9 @@ def save_metric_value_to_database(
             f"{metric.name=} "
             f"{datetime_interval.start_datetime_utc=} "
             f"{datetime_interval.end_datetime_utc=} "
-            f"{forecast_horizon_minutes=}"
-            f"{location.gsp_id=}"
-        )
+            f"{forecast_horizon_minutes=}")
+        if location is not None:
+            logger.warning(f"{location.gsp_id=}")
 
     else:
         metric_sql = get_metric(session=session, name=metric.name)
