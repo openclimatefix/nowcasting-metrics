@@ -7,7 +7,12 @@ import logging
 from typing import Optional, Union
 
 from nowcasting_datamodel import N_GSP
-from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSevenDaysSQL, Metric, ForecastValueSQL
+from nowcasting_datamodel.models import (
+    ForecastValueLatestSQL,
+    ForecastValueSevenDaysSQL,
+    Metric,
+    ForecastValueSQL,
+)
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
@@ -29,6 +34,13 @@ latest_mae = Metric(
     name="Daily Latest MAE",
     description="This metric calculates the MAE for the latest OCF forecast "
     "and compares with the PVLive values. The data is from one day",
+)
+
+latest_mae_with_adjuster = Metric(
+    name="Daily Latest MAE with adjuster",
+    description="This metric calculates the MAE for the latest OCF forecast "
+    "and compares with the PVLive values. The data is from one day. "
+    "The value include the adjuster results",
 )
 
 mae_all_gsps = Metric(
@@ -106,6 +118,7 @@ def make_mae_one_gsp_with_forecast_horizon(
     forecast_horizon_minutes: int,
     use_adjuster: bool = False,
     model: Optional[Union[ForecastValueSQL, ForecastValueSevenDaysSQL]] = None,
+    metric: Optional[Metric] = latest_mae
 ) -> (int, int):
     """
     Calculate the MAE for one GSP for a forecast horizon, and save to database
@@ -117,8 +130,11 @@ def make_mae_one_gsp_with_forecast_horizon(
         made 60 minutes before target time
     :param use_adjuster: option to use the adjuster or not.
     :param model: the model to use
+    :param metric: the metric to use
     :return: 1. the MAE, 2. the number of data points
     """
+
+    logger.debug(f'Calculating {metric.name} for {gsp_id=} and {forecast_horizon_minutes=} with {use_adjuster=}')
 
     if model is None:
         model = ForecastValueSevenDaysSQL
@@ -149,7 +165,7 @@ def make_mae_one_gsp_with_forecast_horizon(
         value=value,
         number_of_data_points=number_of_data_points,
         datetime_interval=datetime_interval,
-        metric=latest_mae,
+        metric=metric,
         location=get_location(gsp_id=gsp_id, session=session),
         forecast_horizon_minutes=forecast_horizon_minutes,
     )
@@ -158,7 +174,11 @@ def make_mae_one_gsp_with_forecast_horizon(
 
 
 def make_mae_one_gsp(
-    session: Session, datetime_interval: DatetimeInterval, gsp_id: int
+    session: Session,
+    datetime_interval: DatetimeInterval,
+    gsp_id: int,
+    use_adjuster: Optional[bool] = False,
+    metric: Optional[Metric] = latest_mae,
 ) -> (int, int):
     """
     Calculate the MAE for one GSP, and save to database
@@ -166,6 +186,8 @@ def make_mae_one_gsp(
     :param session: database session
     :param datetime_interval: datetime interval
     :param gsp_id: the gsp id
+    :param use_adjuster: option to use the adjuster or not.
+    :param metric: the metric to use
     :return: 1. the MAE, 2. the number of data points
     """
 
@@ -175,7 +197,7 @@ def make_mae_one_gsp(
         f"and end-{datetime_interval.end_datetime_utc}"
     )
 
-    query = make_mae_query(session)
+    query = make_mae_query(session, use_adjuster=use_adjuster)
 
     # filter on gsp
     query = query.filter()
@@ -203,7 +225,7 @@ def make_mae_one_gsp(
         value=value,
         number_of_data_points=number_of_data_points,
         datetime_interval=datetime_interval,
-        metric=latest_mae,
+        metric=metric,
         location=get_location(gsp_id=gsp_id, session=session),
     )
 
@@ -310,6 +332,14 @@ def make_mae(
     for gps_id in range(0, n_gsps + 1):
         make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
 
+    make_mae_one_gsp(
+        session=session,
+        datetime_interval=datetime_interval,
+        gsp_id=0,
+        use_adjuster=True,
+        metric=latest_mae_with_adjuster,
+    )
+
     make_mae_all_gsp(session=session, datetime_interval=datetime_interval)
 
     # loop over forecast horizons
@@ -319,6 +349,15 @@ def make_mae(
             datetime_interval=datetime_interval,
             gsp_id=0,
             forecast_horizon_minutes=forecast_horizon_minutes,
+        )
+
+        make_mae_one_gsp_with_forecast_horizon(
+            session=session,
+            datetime_interval=datetime_interval,
+            gsp_id=0,
+            forecast_horizon_minutes=forecast_horizon_minutes,
+            use_adjuster=True,
+            metric=latest_mae_with_adjuster,
         )
 
     for gps_id in range(0, n_gsps + 1):
