@@ -366,6 +366,7 @@ def make_mae(
                 datetime_interval=datetime_interval,
                 gsp_id=0,
                 forecast_horizon_minutes=forecast_horizon_minutes,
+                model_name=model_name
             )
 
             make_mae_one_gsp_with_forecast_horizon(
@@ -375,6 +376,7 @@ def make_mae(
                 forecast_horizon_minutes=forecast_horizon_minutes,
                 use_adjuster=True,
                 metric=latest_mae_with_adjuster,
+                model_name=model_name
             )
 
     # pvlive
