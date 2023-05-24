@@ -137,7 +137,8 @@ def make_mae_one_gsp_with_forecast_horizon(
     :return: 1. the MAE, 2. the number of data points
     """
 
-    logger.debug(f'Calculating {metric.name} for {gsp_id=} and {forecast_horizon_minutes=} with {use_adjuster=}')
+    logger.debug(f'Calculating {metric.name} for {gsp_id=} '
+                 f'and {forecast_horizon_minutes=} with {use_adjuster=} for {model_name=}')
 
     if model is None:
         model = ForecastValueSevenDaysSQL
@@ -198,7 +199,7 @@ def make_mae_one_gsp(
     """
 
     logger.debug(
-        f"Calculating MAE for last forecast for {gsp_id=} for "
+        f"Calculating MAE for last forecast for {gsp_id=} for {model_name=} for"
         f"start={datetime_interval.end_datetime_utc} "
         f"and end-{datetime_interval.end_datetime_utc}"
     )
@@ -250,7 +251,7 @@ def make_mae_all_gsp(session: Session, datetime_interval: DatetimeInterval, mode
     """
 
     logger.debug(
-        f"Calculating MAE for last forecast for all gsps (not national) for "
+        f"Calculating MAE for last forecast for all gsps (not national) for {model_name=} for"
         f"start={datetime_interval.end_datetime_utc} "
         f"and end-{datetime_interval.end_datetime_utc}"
     )

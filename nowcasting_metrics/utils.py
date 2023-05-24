@@ -6,6 +6,7 @@ from typing import Optional
 from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval, Metric, MetricValueSQL
 from nowcasting_datamodel.read.read_metric import get_datetime_interval, get_metric
+from nowcasting_datamodel.read.read import get_model
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,8 @@ def save_metric_value_to_database(
             metric_value_sql.time_of_day = time_of_day
 
         if model_name is not None:
-            metric_value_sql.model_name = model_name
+            model = get_model(session=session, name=model_name)
+            metric_value_sql.model_id = model.id
 
         session.add(metric_value_sql)
         session.commit()
