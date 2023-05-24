@@ -8,7 +8,7 @@ from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.forecast import get_partitions
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.read.read import get_location
+from nowcasting_datamodel.read.read import get_location, get_model
 
 
 @pytest.fixture
@@ -56,15 +56,19 @@ def forecast_values_latest(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
-    for gsp_id in range(0, 6):
-        forecast_values_latest_1 = ForecastValueLatestSQL(
-            target_time=dt1, expected_power_generation_megawatts=1, gsp_id=gsp_id
-        )
-        forecast_values_latest_2 = ForecastValueLatestSQL(
-            target_time=dt2, expected_power_generation_megawatts=4, gsp_id=gsp_id
-        )
 
-        db_session.add_all([forecast_values_latest_1, forecast_values_latest_2])
+    for model_name in ["cnn", "National_xg", "pvnet_v2"]:
+        model = get_model(name=model_name, session=db_session, version='0.0.1')
+
+        for gsp_id in range(0, 6):
+            forecast_values_latest_1 = ForecastValueLatestSQL(
+                target_time=dt1, expected_power_generation_megawatts=1, gsp_id=gsp_id, model_id=model.id
+            )
+            forecast_values_latest_2 = ForecastValueLatestSQL(
+                target_time=dt2, expected_power_generation_megawatts=4, gsp_id=gsp_id, model_id=model.id
+            )
+
+            db_session.add_all([forecast_values_latest_1, forecast_values_latest_2])
 
 
 @pytest.fixture
@@ -72,8 +76,8 @@ def forecast_values(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
-    for model_name in ["cnn", "National_xg"]:
-        model = MLModelSQL(name=model_name)
+    for model_name in ["cnn", "National_xg", "pvnet_v2"]:
+        model = get_model(name=model_name, session=db_session, version='0.0.1')
 
         for gsp_id in range(0, 6):
             location = get_location(gsp_id=gsp_id, session=db_session)

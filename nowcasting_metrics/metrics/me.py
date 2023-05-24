@@ -126,10 +126,10 @@ def make_me(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 30*60}
+        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 30*60, "pvnet_v2": 480}
 
     # loop over forecast horizons
-    for model_name in ["cnn", "National_xg"]:
+    for model_name in ["cnn", "pvnet_v2", "National_xg"]:
         for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes[model_name], 30):
             make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
                 session=session,
