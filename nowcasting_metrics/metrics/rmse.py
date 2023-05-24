@@ -348,6 +348,7 @@ def make_rmse(
                 datetime_interval=datetime_interval,
                 gsp_id=0,
                 forecast_horizon_minutes=forecast_horizon_minutes,
+                model_name=model_name,
             )
 
             make_rmse_one_gsp_with_forecast_horizon(
@@ -357,6 +358,7 @@ def make_rmse(
                 forecast_horizon_minutes=forecast_horizon_minutes,
                 use_adjuster=True,
                 metric=latest_rmse_with_adjuster,
+                model_name=model_name,
             )
 
     # loop over gsps
