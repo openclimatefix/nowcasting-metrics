@@ -75,8 +75,10 @@ def app(
     if datetime_now is None:
         datetime_now = datetime.now(tz=timezone.utc).date()
     else:
-        datetime_now = datetime.strptime(datetime_now, "%Y-%M-%d")
+        datetime_now = datetime.strptime(datetime_now, "%Y-%m-%d")
         datetime_now = datetime_now.date()
+
+    logger.debug(f"datetime_now is {datetime_now}")
 
     connection = DatabaseConnection(url=db_url, base=Base_Forecast, echo=False)
     with connection.get_session() as session:
