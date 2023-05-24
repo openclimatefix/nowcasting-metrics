@@ -3,7 +3,7 @@ import logging
 from typing import Optional, Union
 
 from nowcasting_datamodel import N_GSP
-from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSevenDaysSQL, Metric
+from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSevenDaysSQL, Metric, MLModelSQL
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
@@ -112,6 +112,7 @@ def make_rmse_one_gsp_with_forecast_horizon(
     forecast_horizon_minutes: int,
     use_adjuster: Optional[bool] = False,
     metric: Optional[Metric] = latest_rmse,
+    model_name: Optional[str] = None,
 ) -> (int, int):
     """
     Calculate the RMSE for one GSP for a forecast horizon, and save to database
@@ -121,6 +122,7 @@ def make_rmse_one_gsp_with_forecast_horizon(
     :param gsp_id: the gsp id
     :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
         made 60 minutes before target time
+    :param model_name: the model name of the forecast. This is optional.
     :return: 1. the MAE, 2. the number of data points
     """
 
@@ -128,7 +130,7 @@ def make_rmse_one_gsp_with_forecast_horizon(
 
     sub_query_gsp = make_gsp_sub_query(datetime_interval, gsp_id, session)
     sub_query_forecast = make_forecast_sub_query(
-        datetime_interval, forecast_horizon_minutes, gsp_id, session
+        datetime_interval, forecast_horizon_minutes, gsp_id, session, model_name=model_name
     )
 
     # make full query
@@ -155,6 +157,7 @@ def make_rmse_one_gsp_with_forecast_horizon(
         metric=metric,
         location=get_location(gsp_id=gsp_id, session=session),
         forecast_horizon_minutes=forecast_horizon_minutes,
+        model_name=model_name
     )
 
     return value, number_of_data_points
@@ -166,6 +169,7 @@ def make_rmse_one_gsp(
     gsp_id: int,
     use_adjuster: Optional[bool] = False,
     metric: Optional[Metric] = latest_rmse,
+    model_name: Optional[str] = None,
 ) -> ():
     """
     Calculate the RMSE for one GSP, and save to database
@@ -175,6 +179,7 @@ def make_rmse_one_gsp(
     :param gsp_id: the gsp id
     :param use_adjuster: whether to use the adjuster or not
     :param metric: the metric to use
+    :param model_name: the model name of the forecast. This is optional.
     :return: 1. the MAE, 2. the number of data points
     """
 
@@ -184,7 +189,7 @@ def make_rmse_one_gsp(
         f"and end-{datetime_interval.end_datetime_utc}"
     )
 
-    query = make_rmse_query(session, use_adjuster=use_adjuster)
+    query = make_rmse_query(session, use_adjuster=use_adjuster, model_name=model_name)
 
     # filter on gsp
     query = query.filter()
@@ -214,17 +219,19 @@ def make_rmse_one_gsp(
         datetime_interval=datetime_interval,
         metric=metric,
         location=get_location(gsp_id=gsp_id, session=session),
+        model_name=model_name
     )
 
     return value, number_of_data_points
 
 
-def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval):
+def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval, model_name: Optional[str] = None,):
     """
     Calculate the RMSE for all GSP (not national), and save to database
 
     :param session: database session
     :param datetime_interval: datetime interbal
+    :param model_name: the model name of the forecast. This is optional.
     :return: 1. the MAE, 2. the number of data points
     """
 
@@ -234,7 +241,7 @@ def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval):
         f"and end-{datetime_interval.end_datetime_utc}"
     )
 
-    query = make_rmse_query(session)
+    query = make_rmse_query(session, model_name=model_name)
 
     # filter on gsp
     query = query.filter()
@@ -267,6 +274,7 @@ def make_rmse_all_gsp(session: Session, datetime_interval: DatetimeInterval):
         number_of_data_points=number_of_data_points,
         datetime_interval=datetime_interval,
         metric=rmse_all_gsps,
+        model_name=model_name
     )
 
     return value, number_of_data_points
@@ -276,6 +284,7 @@ def make_rmse_query(
     session,
     model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL,
     use_adjuster: bool = False,
+    model_name: Optional[str] = None,
 ):
     """
     Make rmse query
@@ -294,6 +303,11 @@ def make_rmse_query(
         func.sqrt(func.avg(func.pow(forecast - GSPYieldSQL.solar_generation_kw / 1000, 2))),
         func.count(model.expected_power_generation_megawatts),
     )
+
+    if model_name is not None:
+        query = query.join(MLModelSQL, model.model_id == MLModelSQL.id)
+        query = query.filter(MLModelSQL.name == model_name)
+
     return query
 
 
@@ -313,37 +327,42 @@ def make_rmse(
         The maximum forecast horizon we should look at, default is 8 hours
     """
 
-    # loop over gsps
-    for gps_id in range(0, n_gsps + 1):
-        make_rmse_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
-
-    make_rmse_one_gsp(
-        session=session,
-        datetime_interval=datetime_interval,
-        gsp_id=0,
-        use_adjuster=True,
-        metric=latest_rmse_with_adjuster,
-    )
-
-    make_rmse_all_gsp(session=session, datetime_interval=datetime_interval)
-
-    # loop over forecast horizons
-    for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
-        make_rmse_one_gsp_with_forecast_horizon(
+    # national
+    for model_name in ["cnn", "pvnet_v2", "National_xg"]:
+        make_rmse_one_gsp(
             session=session,
             datetime_interval=datetime_interval,
             gsp_id=0,
-            forecast_horizon_minutes=forecast_horizon_minutes,
-        )
-
-        make_rmse_one_gsp_with_forecast_horizon(
-            session=session,
-            datetime_interval=datetime_interval,
-            gsp_id=0,
-            forecast_horizon_minutes=forecast_horizon_minutes,
             use_adjuster=True,
             metric=latest_rmse_with_adjuster,
+            model_name=model_name
         )
 
+        make_rmse_all_gsp(session=session, datetime_interval=datetime_interval)
+
+        # loop over forecast horizons
+        for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
+            make_rmse_one_gsp_with_forecast_horizon(
+                session=session,
+                datetime_interval=datetime_interval,
+                gsp_id=0,
+                forecast_horizon_minutes=forecast_horizon_minutes,
+            )
+
+            make_rmse_one_gsp_with_forecast_horizon(
+                session=session,
+                datetime_interval=datetime_interval,
+                gsp_id=0,
+                forecast_horizon_minutes=forecast_horizon_minutes,
+                use_adjuster=True,
+                metric=latest_rmse_with_adjuster,
+            )
+
+    # loop over gsps
+    for model_name in ["cnn", "pvnet_v2"]:
+        for gps_id in range(0, n_gsps + 1):
+            make_rmse_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id, model_name=model_name)
+
+    # pvlive
     for gps_id in range(0, n_gsps + 1):
         make_pvlive_rmse(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
