@@ -19,6 +19,7 @@ from nowcasting_datamodel import N_GSP
 from nowcasting_datamodel.connection import DatabaseConnection
 from nowcasting_datamodel.models.base import Base_Forecast
 from nowcasting_datamodel.models.metric import DatetimeInterval
+from nowcasting_datamodel.read.read_metric import get_datetime_interval
 
 import nowcasting_metrics
 from nowcasting_metrics.metrics.mae import make_mae
@@ -89,8 +90,8 @@ def app(
         start_datetime = datetime_now - timedelta(days=1)
         start_datetime = datetime.combine(start_datetime, datetime.min.time())
         end_datetime = start_datetime + timedelta(days=1)
-        datetime_interval = DatetimeInterval(
-            start_datetime_utc=start_datetime, end_datetime_utc=end_datetime
+        datetime_interval = get_datetime_interval(
+            start_datetime_utc=start_datetime, end_datetime_utc=end_datetime, session=session
         )
         logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
@@ -104,8 +105,8 @@ def app(
         start_datetime = datetime_now - timedelta(days=7)
         start_datetime = datetime.combine(start_datetime, datetime.min.time())
         end_datetime = start_datetime + timedelta(days=7)
-        datetime_interval = DatetimeInterval(
-            start_datetime_utc=start_datetime, end_datetime_utc=end_datetime
+        datetime_interval = get_datetime_interval(
+            start_datetime_utc=start_datetime, end_datetime_utc=end_datetime, session=session
         )
         logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
