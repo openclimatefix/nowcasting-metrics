@@ -116,6 +116,8 @@ def app(
         # save values to database
         session.commit()
 
+        # Logging that service has finished.
+        logger.info("Metrics service has finished processing.")
 
 if __name__ == "__main__":
     app()
