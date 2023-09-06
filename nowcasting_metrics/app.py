@@ -95,6 +95,7 @@ def app(
         )
         logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
+    try:
         # run daily MAE
         make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
@@ -115,6 +116,12 @@ def app(
 
         # save values to database
         session.commit()
+
+        # Logging that service has finished.
+        logger.info("Metrics service has finished processing.")
+    except MemoryError:
+        # Log if the service stops due to memory issues
+        logger.error("Metrics service stopped due to memory issues.")
 
 
 if __name__ == "__main__":
