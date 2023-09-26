@@ -95,35 +95,37 @@ def app(
         )
         logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
-    try:
-        # run daily MAE
-        make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+        try:
+            # run daily MAE
+            make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
-        # run daily RMSE
-        make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+            # run daily RMSE
+            make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
-        # get start and end datetime for 1 week ago
-        start_datetime = datetime_now - timedelta(days=7)
-        start_datetime = datetime.combine(start_datetime, datetime.min.time())
-        end_datetime = start_datetime + timedelta(days=7)
-        datetime_interval = get_datetime_interval(
-            start_datetime_utc=start_datetime, end_datetime_utc=end_datetime, session=session
-        )
-        logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
+            # get start and end datetime for 1 week ago
+            start_datetime = datetime_now - timedelta(days=7)
+            start_datetime = datetime.combine(start_datetime, datetime.min.time())
+            end_datetime = start_datetime + timedelta(days=7)
+            datetime_interval = get_datetime_interval(
+                start_datetime_utc=start_datetime, end_datetime_utc=end_datetime, session=session
+            )
+            logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
-        # getting half hour metrics
-        make_me(session=session, datetime_interval=datetime_interval)
+            # getting half hour metrics
+            make_me(session=session, datetime_interval=datetime_interval)
 
-        # save values to database
-        session.commit()
+            # save values to database
+            session.commit()
 
-        # Logging that service has finished.
-        logger.info("Metrics service has finished processing.")
-    except MemoryError:
-        # Log if the service stops due to memory issues
-        logger.error("Metrics service stopped due to memory issues.")
+            # Logging that service has finished.
+            logger.info("Metrics service has finished processing.")
+        except MemoryError:
+            # Log if the service stops due to memory issues
+            logger.error("Metrics service stopped due to memory issues.")
+        except Exception as e:
+            raise e
 
-    logger.info("Metrics app service finished")
+        logger.info("Metrics app service finished")
 
 
 
