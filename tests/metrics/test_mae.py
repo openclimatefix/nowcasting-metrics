@@ -42,7 +42,7 @@ def test_make_mae_five_gsp(
         session=db_session,
         datetime_interval=datetime_interval,
         n_gsps=5,
-        max_forecast_horizon_minutes=240,
+        max_forecast_horizon_minutes={"cnn": 240, "National_xg": 240, "pvnet_v2": 240},
     )
 
 
