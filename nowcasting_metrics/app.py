@@ -123,6 +123,9 @@ def app(
         # Log if the service stops due to memory issues
         logger.error("Metrics service stopped due to memory issues.")
 
+    logger.info("Metrics app service finished")
+
+
 
 if __name__ == "__main__":
     app()
