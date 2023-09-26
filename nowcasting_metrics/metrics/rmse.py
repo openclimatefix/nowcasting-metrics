@@ -316,7 +316,7 @@ def make_rmse(
     session: Session,
     datetime_interval: DatetimeInterval,
     n_gsps: Optional[int] = N_GSP,
-    max_forecast_horizon_minutes: Optional[int] = 480,
+    max_forecast_horizon_minutes: Optional[dict] = None,
 ):
     """
     Calculate RMSE for all GSPs
@@ -325,8 +325,12 @@ def make_rmse(
     :param datetime_interval: datetime interval
     :param n_gsps: The number of gsps (+1 for national)
     :param: max_forecast_horizon_minutes.
-        The maximum forecast horizon we should look at, default is 8 hours
+        The maximum forecast horizon we should look at, default is set below
     """
+
+    if max_forecast_horizon_minutes is None:
+        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480}
+
 
     # national
     for model_name in ["cnn", "pvnet_v2", "National_xg"]:
@@ -342,7 +346,7 @@ def make_rmse(
         make_rmse_all_gsp(session=session, datetime_interval=datetime_interval)
 
         # loop over forecast horizons
-        for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes, 30):
+        for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes[model_name], 30):
             make_rmse_one_gsp_with_forecast_horizon(
                 session=session,
                 datetime_interval=datetime_interval,
