@@ -1,6 +1,6 @@
 # nowasting_metrics
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 Repo to automatically run metrics on the nowcasting forecast
 
@@ -77,6 +77,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/abhijelly"><img src="https://avatars.githubusercontent.com/u/75399048?v=4?s=100" width="100px;" alt="Abhijeet"/><br /><sub><b>Abhijeet</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting-metrics/commits?author=abhijelly" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/peterdudfield"><img src="https://avatars.githubusercontent.com/u/34686298?v=4?s=100" width="100px;" alt="Peter Dudfield"/><br /><sub><b>Peter Dudfield</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting-metrics/commits?author=peterdudfield" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AnshRoshan"><img src="https://avatars.githubusercontent.com/u/71877143?v=4?s=100" width="100px;" alt="Ansh Roshan"/><br /><sub><b>Ansh Roshan</b></sub></a><br /><a href="https://github.com/openclimatefix/nowcasting-metrics/commits?author=AnshRoshan" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
