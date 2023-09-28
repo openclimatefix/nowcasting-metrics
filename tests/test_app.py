@@ -48,7 +48,8 @@ def test_app(db_connection, db_session, gsp_yields, gsp_yields_inday, forecast_v
     # x2 due to MAE and RMSE
     # Total is 144
     # + ME # 3 models * 8 forecast horizons * 2 half hours  = 48
-    # Total is 192
+    # + Ramp rate 3 models * 3 forecast horizons  = 9
+    # Total is 201
 
     metrics = db_session.query(MetricSQL).all()
-    assert len(metrics) == 9
+    assert len(metrics) == 10
