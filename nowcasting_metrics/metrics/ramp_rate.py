@@ -31,6 +31,8 @@ def make_forecast_value_query(
     datetime_interval: DatetimeInterval,
     forecast_horizon_minutes: int,
 ):
+    """Make a query to get the forecast values and the true values from the database"""
+    # get truth and prediction sub queries
     sub_query_gsp = make_gsp_sub_query(
         datetime_interval=datetime_interval, gsp_id=0, session=session
     )
@@ -43,6 +45,7 @@ def make_forecast_value_query(
         model_name=model_name,
     )
 
+    # join truth and predictions together
     query = session.query(
         ForecastValueSevenDaysSQL.forecast_id.label(f"id_{sub_query_name}"),
         ForecastValueSevenDaysSQL.target_time.label(f"t_{sub_query_name}"),
@@ -65,6 +68,7 @@ def make_ramp_rate_one_forecast_horizon_minutes(
     forecast_horizon_minutes: int,
     ramp_rate_minutes: int,
 ):
+    """Calculate one ramp rate metric for a given forecast horizon"""
 
     # get the forecast values with the forecast horizon
     query_a = make_forecast_value_query(
@@ -93,12 +97,14 @@ def make_ramp_rate_one_forecast_horizon_minutes(
         func.count(),
     )
 
+    # join queries together
     query = query.filter(query_a.c.id_a == query_b.c.id_b)
     query = query.filter(
         query_a.c.t_a == query_b.c.t_b - text(f"interval '{ramp_rate_minutes} minute'")
     )
-    results = query.all()
 
+    # get results
+    results = query.all()
     number_of_data_points = results[0][1]
     value = results[0][0]
 
