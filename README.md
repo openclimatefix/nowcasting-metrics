@@ -26,6 +26,13 @@ Repo to automatically run metrics on the nowcasting forecast
 
 - The ME is calculated for National only from the last week. It is grouped by `time of day` and `forecast_horizon`. 
 
+### Ramp Rate
+
+- The MAE of the ramp rate is calculated for each model for the national forecast only. 
+We define ramp rate as
+`((pred_{t+1 hour} - pred_{t}) - (true_{t+1 hour} - true_{t}))` for each individual forecast run. 
+We calculate the 0, 1 and 2 hour ramp rate. The 0 hour ramp rate looks at values at 0 and 1 hour from each forecast. 
+
 ## Tests
 ### Local pytest
 

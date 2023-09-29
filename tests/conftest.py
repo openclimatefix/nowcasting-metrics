@@ -106,6 +106,41 @@ def forecast_values(db_session):
                 db_session.add(forecast)
 
 
+
+@pytest.fixture
+def forecast_values_same_creation(db_session):
+    dt1 = datetime(2022, 1, 1, 0, 30)
+    dt2 = datetime(2022, 1, 1, 1)
+
+    for model_name in ["cnn", "National_xg", "pvnet_v2"]:
+        model = get_model(name=model_name, session=db_session, version='0.0.1')
+
+        for gsp_id in range(0, 6):
+            location = get_location(gsp_id=gsp_id, session=db_session)
+
+            for forecast_horizon_minutes in range(0, 240, 30):
+                created_utc_1 = dt1 - timedelta(minutes=forecast_horizon_minutes + 15)
+
+                forecast_values_1 = ForecastValueSevenDaysSQL(
+                    target_time=dt1,
+                    expected_power_generation_megawatts=1 + forecast_horizon_minutes,
+                    created_utc=created_utc_1,
+                )
+                forecast_values_2 = ForecastValueSevenDaysSQL(
+                    target_time=dt2,
+                    expected_power_generation_megawatts=4 + forecast_horizon_minutes,
+                    created_utc=created_utc_1,
+                )
+
+                forecast = ForecastSQL(
+                    location=location,
+                    forecast_values_last_seven_days=[forecast_values_1, forecast_values_2],
+                    model=model
+                )
+
+                db_session.add(forecast)
+
+
 @pytest.fixture
 def gsp_yields(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)

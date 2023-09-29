@@ -26,6 +26,7 @@ from nowcasting_metrics.metrics.mae import make_mae
 from nowcasting_metrics.metrics.me import make_me
 from nowcasting_metrics.metrics.metrics import check_metrics_in_database
 from nowcasting_metrics.metrics.rmse import make_rmse
+from nowcasting_metrics.metrics.ramp_rate import make_ramp_rate
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
@@ -113,6 +114,9 @@ def app(
 
             # getting half hour metrics
             make_me(session=session, datetime_interval=datetime_interval)
+
+            # run ramp rate
+            make_ramp_rate(session=session, datetime_interval=datetime_interval)
 
             # save values to database
             session.commit()
