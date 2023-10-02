@@ -104,6 +104,12 @@ def app(
             # run daily RMSE
             make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
+            # run ramp rate
+            make_ramp_rate(session=session, datetime_interval=datetime_interval)
+
+            # run probabilistic metrics
+            make_probabilistic(session=session, datetime_interval=datetime_interval)
+
             # get start and end datetime for 1 week ago
             start_datetime = datetime_now - timedelta(days=7)
             start_datetime = datetime.combine(start_datetime, datetime.min.time())
@@ -115,12 +121,6 @@ def app(
 
             # getting half hour metrics
             make_me(session=session, datetime_interval=datetime_interval)
-
-            # run ramp rate
-            make_ramp_rate(session=session, datetime_interval=datetime_interval)
-
-            # run probabilistic metrics
-            make_probabilistic(session=session, datetime_interval=datetime_interval)
 
             # save values to database
             session.commit()
