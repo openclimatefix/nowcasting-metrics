@@ -155,6 +155,7 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
         location=get_location(gsp_id=0, session=session),
         model_name=model_name,
         plevel=float(p_level),
+        forecast_horizon_minutes=forecast_horizon_minutes,
     )
 
     # save to database
@@ -167,6 +168,7 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
         location=get_location(gsp_id=0, session=session),
         model_name=model_name,
         plevel=float(p_level),
+        forecast_horizon_minutes=forecast_horizon_minutes,
     )
 
     return exceedance_value, pinball_value, number_of_data_points
