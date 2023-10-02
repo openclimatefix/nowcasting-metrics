@@ -91,8 +91,8 @@ def make_ramp_rate_one_forecast_horizon_minutes(
     # # join queries together and get ramp rate
     query = session.query(
         func.avg(
-            func.abs(query_b.c.power_b - query_a.c.power_a)
-            - (query_b.c.true_b / 1000 - query_a.c.true_a / 1000)
+            func.abs(query_b.c.power_b - query_a.c.power_a
+            - (query_b.c.true_b / 1000 - query_a.c.true_a / 1000))
         ),
         func.count(),
     )
