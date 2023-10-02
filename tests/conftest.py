@@ -90,11 +90,13 @@ def forecast_values(db_session):
                     target_time=dt1,
                     expected_power_generation_megawatts=1 + forecast_horizon_minutes,
                     created_utc=created_utc_1,
+                    properties={"10": (4 + forecast_horizon_minutes) * 0.9, "90": (4 + forecast_horizon_minutes) * 1.1}
                 )
                 forecast_values_2 = ForecastValueSevenDaysSQL(
                     target_time=dt2,
                     expected_power_generation_megawatts=4 + forecast_horizon_minutes,
                     created_utc=created_utc_2,
+                    properties={"10": (1 + forecast_horizon_minutes) * 0.9, "90": (1 + forecast_horizon_minutes) * 1.1}
                 )
 
                 forecast = ForecastSQL(

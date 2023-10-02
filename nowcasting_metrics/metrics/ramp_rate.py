@@ -139,13 +139,13 @@ def make_ramp_rate(
     :param datetime_interval: datetime interval
     :return: None
     """
-    forecast_horizon_minutes = [0, 1, 2]
-    for forecast_horizon_minute in forecast_horizon_minutes:
+    forecast_horizon_hours = [0, 1, 2]
+    for forecast_horizon_hour in forecast_horizon_hours:
         for model_name in ["cnn", "pvnet_v2", "National_xg"]:
             make_ramp_rate_one_forecast_horizon_minutes(
                 session=session,
                 model_name=model_name,
                 datetime_interval=datetime_interval,
-                forecast_horizon_minutes=forecast_horizon_minute,
+                forecast_horizon_minutes=forecast_horizon_hour*60,
                 ramp_rate_minutes=60,
             )

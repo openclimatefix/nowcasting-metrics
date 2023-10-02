@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 me_hh = Metric(
     name="Half Hourly ME",
-    description="The mean error for a given half hour interval, " "over the a number of days",
+    description="The mean error for a given half hour interval over the a number of days",
 )
 
 

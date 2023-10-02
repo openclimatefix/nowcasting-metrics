@@ -331,7 +331,6 @@ def make_rmse(
     if max_forecast_horizon_minutes is None:
         max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480}
 
-
     # national
     for model_name in ["cnn", "pvnet_v2", "National_xg"]:
         make_rmse_one_gsp(
