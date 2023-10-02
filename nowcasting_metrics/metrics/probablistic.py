@@ -132,8 +132,12 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
         pinball_value += (results_over[0][0] * results_over[0][1]) * tau
 
     # divide by the number of data points to get average
-    pinball_value = pinball_value / number_of_data_points
-    exceedance_value = results_over[0][1] / number_of_data_points
+    if number_of_data_points == 0:
+        pinball_value = None
+        exceedance_value = None
+    else:
+        pinball_value = pinball_value / number_of_data_points
+        exceedance_value = results_over[0][1] / number_of_data_points
 
     print(f"results_under: {results_under}")
     print(f"results_over: {results_over}")
@@ -186,7 +190,7 @@ def make_probabilistic(
         max_forecast_horizon_minutes = {"National_xg": 40 * 60, "pvnet_v2": 480}
 
     for model_name in ["pvnet_v2", "National_xg"]:
-        for forecast_horizon_minute in max_forecast_horizon_minutes[model_name]:
+        for forecast_horizon_minute in range(0, max_forecast_horizon_minutes[model_name], 30):
             for p_level in ["10", "90"]:
 
                 make_probabilistic_metrics_one_forecast_horizon_minutes(
