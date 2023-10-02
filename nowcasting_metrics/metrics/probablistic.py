@@ -58,7 +58,7 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
 
     logger.info(
         f"Making pinball and exceedance metrics for probabilistic forecast, "
-        f"for {model_name}, {forecast_horizon_minutes}, {p_level}"
+        f"for {model_name=}, {forecast_horizon_minutes=}, {p_level=}"
     )
 
     # get a valye between 0 and 1
@@ -139,11 +139,8 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
         pinball_value = pinball_value / number_of_data_points
         exceedance_value = results_over[0][1] / number_of_data_points
 
-    print(f"results_under: {results_under}")
-    print(f"results_over: {results_over}")
-    print(f"number_of_data_points: {number_of_data_points}")
-    print(f"pinball: {pinball_value}")
-    print(f"tau: {tau}")
+    logger.debug(f"pinball: {pinball_value}")
+    logger.debug(f"exceedance_value: {exceedance_value}")
 
     # save to database
     save_metric_value_to_database(

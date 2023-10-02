@@ -76,7 +76,7 @@ def save_metric_value_to_database(
             metric_value_sql.model_id = model.id
 
         if plevel is not None:
-            metric_value_sql.plevel = plevel
+            metric_value_sql.p_level = plevel
 
         session.add(metric_value_sql)
         session.commit()

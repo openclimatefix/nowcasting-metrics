@@ -110,7 +110,7 @@ def make_ramp_rate_one_forecast_horizon_minutes(
 
     logger.debug(
         f"Found Ramp Rate of {value} from {number_of_data_points} data points"
-        f" for {forecast_horizon_minutes=} for gsp_id=0."
+        f" for {forecast_horizon_minutes=} for gsp_id=0. {model_name=}"
     )
 
     # save to database
