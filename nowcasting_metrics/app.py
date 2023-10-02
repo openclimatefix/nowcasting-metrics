@@ -27,6 +27,7 @@ from nowcasting_metrics.metrics.me import make_me
 from nowcasting_metrics.metrics.metrics import check_metrics_in_database
 from nowcasting_metrics.metrics.rmse import make_rmse
 from nowcasting_metrics.metrics.ramp_rate import make_ramp_rate
+from nowcasting_metrics.metrics.probablistic import make_probabilistic
 
 logging.basicConfig(
     level=getattr(logging, os.getenv("LOGLEVEL", "DEBUG")),
@@ -117,6 +118,9 @@ def app(
 
             # run ramp rate
             make_ramp_rate(session=session, datetime_interval=datetime_interval)
+
+            # run probabilistic metrics
+            make_probabilistic(session=session, datetime_interval=datetime_interval)
 
             # save values to database
             session.commit()

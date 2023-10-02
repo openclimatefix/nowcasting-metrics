@@ -34,7 +34,7 @@ def test_app(db_connection, db_session, gsp_yields, gsp_yields_inday, forecast_v
     assert response.exit_code == 0, response.exception
 
     metric_values = db_session.query(MetricValueSQL).all()
-    assert len(metric_values) == 192
+    assert len(metric_values) == 329
     # National
     # - with and without adjuster = 2
     # - 8 forecast horizons with and without adjuster = 16
@@ -50,6 +50,9 @@ def test_app(db_connection, db_session, gsp_yields, gsp_yields_inday, forecast_v
     # + ME # 3 models * 8 forecast horizons * 2 half hours  = 48
     # + Ramp rate 3 models * 3 forecast horizons  = 9
     # Total is 201
+    # Pinball 2 models * 8 forecast horizons * 2 half hours * 2 p levels  = 64
+    # Exceedance 2 models * 8 forecast horizons * 2 half hours * 2 p levels  = 64
+    # Total 329
 
     metrics = db_session.query(MetricSQL).all()
     assert len(metrics) == 10

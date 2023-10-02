@@ -21,6 +21,7 @@ def save_metric_value_to_database(
     forecast_horizon_minutes: Optional[int] = None,
     time_of_day: Optional[datetime.time] = None,
     model_name: Optional[str] = None,
+    plevel: Optional[float] = None,
 ):
     """
     Save one metric value to the database
@@ -73,6 +74,9 @@ def save_metric_value_to_database(
         if model_name is not None:
             model = get_model(session=session, name=model_name)
             metric_value_sql.model_id = model.id
+
+        if plevel is not None:
+            metric_value_sql.plevel = plevel
 
         session.add(metric_value_sql)
         session.commit()
