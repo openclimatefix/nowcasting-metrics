@@ -33,6 +33,13 @@ We define ramp rate as
 `((pred_{t+1 hour} - pred_{t}) - (true_{t+1 hour} - true_{t}))` for each individual forecast run. 
 We calculate the 0, 1 and 2 hour ramp rate. The 0 hour ramp rate looks at values at 0 and 1 hour from each forecast. 
 
+### Probabilistic
+
+- We look at the average pinball loss and the average exceedance for plevels 10 and 90. 
+- This for `PVnet` and `National_xg`
+- We look at different forecast horizons for this metric
+
+
 ## Tests
 ### Local pytest
 
