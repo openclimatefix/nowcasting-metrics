@@ -122,6 +122,7 @@ def make_ramp_rate_one_forecast_horizon_minutes(
         metric=ramp_rate,
         location=get_location(gsp_id=0, session=session),
         model_name=model_name,
+        forecast_horizon_minutes=forecast_horizon_minutes,
     )
 
     return value, number_of_data_points
