@@ -100,7 +100,7 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
     query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
     query = query.filter(
         ForecastValueSevenDaysSQL.properties[p_level].as_float()
-        > GSPYieldSQL.solar_generation_kw / 1000
+        >= GSPYieldSQL.solar_generation_kw / 1000
     )
     results_over = query.all()
 
