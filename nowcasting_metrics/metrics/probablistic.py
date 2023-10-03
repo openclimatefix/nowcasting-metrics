@@ -137,7 +137,15 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
         exceedance_value = None
     else:
         pinball_value = pinball_value / number_of_data_points
-        exceedance_value = results_over[0][1] / number_of_data_points
+
+        # to take account for night where the truth and prediction are both 0
+        # for plevels above 50, we want to include these,
+        # for plevels below 50, we want to exclude these
+        # both results_under and results_over include these night time values
+        if tau < 0.5:
+            exceedance_value = 1 - (results_under[0][1] / number_of_data_points)
+        else:
+            exceedance_value = results_over[0][1] / number_of_data_points
 
     logger.debug(f"pinball: {pinball_value}")
     logger.debug(f"exceedance_value: {exceedance_value}")
