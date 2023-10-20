@@ -4,6 +4,7 @@
 
 """
 import logging
+import os
 from typing import Optional, Union
 
 from nowcasting_datamodel import N_GSP
@@ -30,6 +31,7 @@ from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
 
+use_pvnet_gsp_sum = os.getenv("USE_PVNET_GSP_SUM", "False").lower() == "true"
 
 latest_mae = Metric(
     name="Daily Latest MAE",
@@ -347,10 +349,14 @@ def make_mae(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480}
+        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480, "pvnet_gsp_sum": 480}
+
+    models = ["cnn", "pvnet_v2", "National_xg"]
+    if use_pvnet_gsp_sum:
+        models.append("pvnet_gsp_sum")
 
     # national
-    for model_name in ["cnn", "pvnet_v2", "National_xg"]:
+    for model_name in models:
         make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=0, model_name=model_name)
 
         make_mae_one_gsp(
