@@ -1,5 +1,6 @@
 """ Function to make RMSE """
 import logging
+import os
 from typing import Optional, Union
 
 from nowcasting_datamodel import N_GSP
@@ -19,6 +20,8 @@ from nowcasting_metrics.metrics.utils import (
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
+
+use_pvnet_gsp_sum = int(os.getenv("USE_PVNET_GSP_SUM", False))
 
 
 latest_rmse = Metric(
@@ -329,7 +332,12 @@ def make_rmse(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480}
+        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480, "pvnet_gsp_sum": 480}
+
+    models = ["cnn", "pvnet_v2", "National_xg"]
+    if use_pvnet_gsp_sum:
+        models.append("pvnet_gsp_sum")
+
 
     # national
     for model_name in ["cnn", "pvnet_v2", "National_xg"]:

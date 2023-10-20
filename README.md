@@ -64,6 +64,7 @@ DB_URL: The database url you want to save the results to
 N_GSPS: The number of gsps you want to pull
 DATETIME_NOW: The datetime of when this app is ran. Default is None, and Now() is selected.
 This is useful as the app calculates the daily metrics from yesterday
+USE_PVNET_GSP_SUM: Option to use `pvnet_gsp_sum` or not. Default is false
 
 These options can also be enter like this:
 
