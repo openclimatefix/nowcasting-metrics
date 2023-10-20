@@ -31,7 +31,7 @@ from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
 
-use_pvnet_gsp_sum = int(os.getenv("USE_PVNET_GSP_SUM", False))
+use_pvnet_gsp_sum = os.getenv("USE_PVNET_GSP_SUM", "False").lower() == "true"
 
 latest_mae = Metric(
     name="Daily Latest MAE",
