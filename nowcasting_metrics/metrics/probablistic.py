@@ -195,9 +195,11 @@ def make_probabilistic(
 
     if max_forecast_horizon_minutes is None:
         max_forecast_horizon_minutes = {"National_xg": 40 * 60, "pvnet_v2": 480}
+        max_forecast_horizon_minutes = {"National_xg": 180, "pvnet_v2": 180}
 
     for model_name in ["pvnet_v2", "National_xg"]:
-        for forecast_horizon_minute in range(0, max_forecast_horizon_minutes[model_name], 30):
+        # for forecast_horizon_minute in range(0, max_forecast_horizon_minutes[model_name], 30):
+        for forecast_horizon_minute in [60,120,240,420]:
             for p_level in ["10", "90"]:
 
                 make_probabilistic_metrics_one_forecast_horizon_minutes(

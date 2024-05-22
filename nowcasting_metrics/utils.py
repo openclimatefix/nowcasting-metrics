@@ -6,7 +6,7 @@ from typing import Optional
 from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval, Metric, MetricValueSQL
 from nowcasting_datamodel.read.read_metric import get_datetime_interval, get_metric
-from nowcasting_datamodel.read.read import get_model
+from nowcasting_datamodel.read.read_models import get_model
 
 logger = logging.getLogger(__name__)
 

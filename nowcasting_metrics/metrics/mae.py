@@ -18,7 +18,7 @@ from nowcasting_datamodel.models import (
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
-from nowcasting_datamodel.read.models import get_models
+from nowcasting_datamodel.read.read_models import get_models
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
@@ -374,6 +374,7 @@ def make_mae(
         with_forecasts=True,
         forecast_created_utc=datetime_interval.start_datetime_utc,
     )
+    models = [model.name for model in models]
     if use_pvnet_gsp_sum and "pvnet_gsp_sum" not in models:
         models.append("pvnet_gsp_sum")
 
