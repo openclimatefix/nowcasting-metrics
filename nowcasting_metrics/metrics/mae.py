@@ -18,6 +18,7 @@ from nowcasting_datamodel.models import (
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
+from nowcasting_datamodel.read.models import get_models
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
@@ -351,9 +352,14 @@ def make_mae(
     if max_forecast_horizon_minutes is None:
         max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480, "pvnet_gsp_sum": 480}
 
-    models = ["cnn", "pvnet_v2", "National_xg"]
-    if use_pvnet_gsp_sum:
+    models = get_models(session=session, with_forecasts=True, forecast_created_utc=datetime_interval.start_datetime_utc)
+    if use_pvnet_gsp_sum and "pvnet_gsp_sum" not in models:
         models.append("pvnet_gsp_sum")
+
+    # make sure models in max_forecast_horizon_minutes
+    for model in models:
+        if model not in max_forecast_horizon_minutes:
+            max_forecast_horizon_minutes[model] = 480
 
     # national
     for model_name in models:
@@ -393,7 +399,7 @@ def make_mae(
         make_pvlive_mae(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
 
     # all gsps
-    for model_name in ["cnn", "pvnet_v2"]:
+    for model_name in ["pvnet_v2"]:
         for gps_id in range(1, n_gsps + 1):
             make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id, model_name=model_name)
 
