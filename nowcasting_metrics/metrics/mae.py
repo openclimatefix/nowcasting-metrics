@@ -13,11 +13,12 @@ from nowcasting_datamodel.models import (
     ForecastValueSevenDaysSQL,
     Metric,
     ForecastValueSQL,
-    MLModelSQL
+    MLModelSQL,
 )
 from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
+from nowcasting_datamodel.read.read_models import get_models
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
@@ -122,7 +123,7 @@ def make_mae_one_gsp_with_forecast_horizon(
     use_adjuster: bool = False,
     model: Optional[Union[ForecastValueSQL, ForecastValueSevenDaysSQL]] = None,
     metric: Optional[Metric] = latest_mae,
-    model_name: Optional[str] = None
+    model_name: Optional[str] = None,
 ) -> (int, int):
     """
     Calculate the MAE for one GSP for a forecast horizon, and save to database
@@ -139,15 +140,22 @@ def make_mae_one_gsp_with_forecast_horizon(
     :return: 1. the MAE, 2. the number of data points
     """
 
-    logger.debug(f'Calculating {metric.name} for {gsp_id=} '
-                 f'and {forecast_horizon_minutes=} with {use_adjuster=} for {model_name=}')
+    logger.debug(
+        f"Calculating {metric.name} for {gsp_id=} "
+        f"and {forecast_horizon_minutes=} with {use_adjuster=} for {model_name=}"
+    )
 
     if model is None:
         model = ForecastValueSevenDaysSQL
 
     sub_query_gsp = make_gsp_sub_query(datetime_interval, gsp_id, session)
     sub_query_forecast = make_forecast_sub_query(
-        datetime_interval, forecast_horizon_minutes, gsp_id, session, model=model, model_name=model_name
+        datetime_interval,
+        forecast_horizon_minutes,
+        gsp_id,
+        session,
+        model=model,
+        model_name=model_name,
     )
 
     # make full query
@@ -174,7 +182,7 @@ def make_mae_one_gsp_with_forecast_horizon(
         metric=metric,
         location=get_location(gsp_id=gsp_id, session=session),
         forecast_horizon_minutes=forecast_horizon_minutes,
-        model_name=model_name
+        model_name=model_name,
     )
 
     return value, number_of_data_points
@@ -236,13 +244,17 @@ def make_mae_one_gsp(
         datetime_interval=datetime_interval,
         metric=metric,
         location=get_location(gsp_id=gsp_id, session=session),
-        model_name=model_name
+        model_name=model_name,
     )
 
     return value, number_of_data_points
 
 
-def make_mae_all_gsp(session: Session, datetime_interval: DatetimeInterval, model_name: Optional[str] = None,) -> (int, int):
+def make_mae_all_gsp(
+    session: Session,
+    datetime_interval: DatetimeInterval,
+    model_name: Optional[str] = None,
+) -> (int, int):
     """
     Calculate the MAE for all GSPs (not national), and save to database
 
@@ -295,7 +307,7 @@ def make_mae_all_gsp(session: Session, datetime_interval: DatetimeInterval, mode
         datetime_interval=datetime_interval,
         metric=mae_all_gsps,
         location=None,
-        model_name=model_name
+        model_name=model_name,
     )
 
     return value, number_of_data_points
@@ -349,15 +361,33 @@ def make_mae(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40 * 60, "pvnet_v2": 480, "pvnet_gsp_sum": 480}
+        max_forecast_horizon_minutes = {
+            "cnn": 480,
+            "National_xg": 40 * 60,
+            "pvnet_v2": 480,
+            "pvnet_gsp_sum": 480,
+        }
 
-    models = ["cnn", "pvnet_v2", "National_xg"]
-    if use_pvnet_gsp_sum:
+    # this gets all the models used in the last week
+    models = get_models(
+        session=session,
+        with_forecasts=True,
+        forecast_created_utc=datetime_interval.start_datetime_utc,
+    )
+    models = [model.name for model in models]
+    if use_pvnet_gsp_sum and "pvnet_gsp_sum" not in models:
         models.append("pvnet_gsp_sum")
+
+    # make sure models in max_forecast_horizon_minutes
+    for model in models:
+        if model not in max_forecast_horizon_minutes:
+            max_forecast_horizon_minutes[model] = 480
 
     # national
     for model_name in models:
-        make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=0, model_name=model_name)
+        make_mae_one_gsp(
+            session=session, datetime_interval=datetime_interval, gsp_id=0, model_name=model_name
+        )
 
         make_mae_one_gsp(
             session=session,
@@ -375,7 +405,7 @@ def make_mae(
                 datetime_interval=datetime_interval,
                 gsp_id=0,
                 forecast_horizon_minutes=forecast_horizon_minutes,
-                model_name=model_name
+                model_name=model_name,
             )
 
             make_mae_one_gsp_with_forecast_horizon(
@@ -385,7 +415,7 @@ def make_mae(
                 forecast_horizon_minutes=forecast_horizon_minutes,
                 use_adjuster=True,
                 metric=latest_mae_with_adjuster,
-                model_name=model_name
+                model_name=model_name,
             )
 
     # pvlive
@@ -395,7 +425,13 @@ def make_mae(
     # all gsps
     for model_name in ["cnn", "pvnet_v2"]:
         for gps_id in range(1, n_gsps + 1):
-            make_mae_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id, model_name=model_name)
+            make_mae_one_gsp(
+                session=session,
+                datetime_interval=datetime_interval,
+                gsp_id=gps_id,
+                model_name=model_name,
+            )
 
-        make_mae_all_gsp(session=session, datetime_interval=datetime_interval, model_name=model_name)
-
+        make_mae_all_gsp(
+            session=session, datetime_interval=datetime_interval, model_name=model_name
+        )

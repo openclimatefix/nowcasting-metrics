@@ -8,7 +8,8 @@ from nowcasting_datamodel.models.base import Base_Forecast, Base_PV
 from nowcasting_datamodel.models.forecast import get_partitions
 from nowcasting_datamodel.models.gsp import GSPYield
 from nowcasting_datamodel.models.metric import DatetimeInterval
-from nowcasting_datamodel.read.read import get_location, get_model
+from nowcasting_datamodel.read.read import get_location
+from nowcasting_datamodel.read.read_models import get_model
 
 
 @pytest.fixture
