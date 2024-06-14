@@ -20,6 +20,9 @@ default_max_forecast_horizon_minutes = {
     "pvnet_gsp_sum": 480,
 }
 
+default_gsp_models = ["cnn", "pvnet_v2", "pvnet_day_ahead"]
+default_national_models = ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]
+default_probabilistic_models = ["pvnet_v2", "National_xg", "pvnet_day_ahead"]
 
 def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
     """

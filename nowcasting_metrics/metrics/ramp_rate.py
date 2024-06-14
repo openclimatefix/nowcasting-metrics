@@ -10,7 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
-from nowcasting_metrics.metrics.utils import make_gsp_sub_query, make_forecast_sub_query
+from nowcasting_metrics.metrics.utils import default_national_models, make_gsp_sub_query, make_forecast_sub_query
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
@@ -141,7 +141,7 @@ def make_ramp_rate(
     """
     forecast_horizon_hours = [0, 1, 2]
     for forecast_horizon_hour in forecast_horizon_hours:
-        for model_name in ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]:
+        for model_name in default_national_models:
             make_ramp_rate_one_forecast_horizon_minutes(
                 session=session,
                 model_name=model_name,

@@ -24,6 +24,7 @@ from sqlalchemy.sql import func
 
 from nowcasting_metrics.metrics.utils import (
     default_max_forecast_horizon_minutes,
+    default_gsp_models,
     filter_query_on_datetime_interval,
     make_forecast_sub_query,
     make_gsp_sub_query,
@@ -419,7 +420,7 @@ def make_mae(
         make_pvlive_mae(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
 
     # all gsps
-    for model_name in ["cnn", "pvnet_v2", "pvnet_day_ahead"]:
+    for model_name in default_gsp_models:
         for gps_id in range(1, n_gsps + 1):
             make_mae_one_gsp(
                 session=session,

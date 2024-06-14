@@ -23,7 +23,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 from sqlalchemy import Float
 
-from nowcasting_metrics.metrics.utils import default_max_forecast_horizon_minutes, make_gsp_sub_query, make_forecast_sub_query
+from nowcasting_metrics.metrics.utils import default_max_forecast_horizon_minutes, default_probabilistic_models, make_gsp_sub_query, make_forecast_sub_query
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
@@ -196,7 +196,7 @@ def make_probabilistic(
     if max_forecast_horizon_minutes is None:
         max_forecast_horizon_minutes = default_max_forecast_horizon_minutes
 
-    for model_name in ["pvnet_v2", "National_xg", "pvnet_day_ahead"]:
+    for model_name in default_probabilistic_models:
         for forecast_horizon_minute in range(0, max_forecast_horizon_minutes[model_name], 30):
             for p_level in ["10", "90"]:
 

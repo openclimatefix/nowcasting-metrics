@@ -13,6 +13,8 @@ from sqlalchemy.sql import func
 
 from nowcasting_metrics.metrics.utils import (
     default_max_forecast_horizon_minutes,
+    default_gsp_models,
+    default_national_models,
     filter_query_on_datetime_interval,
     make_forecast_sub_query,
     make_gsp_sub_query,
@@ -335,12 +337,12 @@ def make_rmse(
     if max_forecast_horizon_minutes is None:
         max_forecast_horizon_minutes = default_max_forecast_horizon_minutes
 
-    models = ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]
+    models = default_national_models
     if use_pvnet_gsp_sum:
         models.append("pvnet_gsp_sum")
 
     # national
-    for model_name in ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]:
+    for model_name in default_national_models:
         make_rmse_one_gsp(
             session=session,
             datetime_interval=datetime_interval,
@@ -373,7 +375,7 @@ def make_rmse(
             )
 
     # loop over gsps
-    for model_name in ["cnn", "pvnet_v2", "pvnet_day_ahead"]:
+    for model_name in default_gsp_models:
         for gps_id in range(0, n_gsps + 1):
             make_rmse_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id, model_name=model_name)
 
