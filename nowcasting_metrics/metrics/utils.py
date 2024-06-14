@@ -12,6 +12,15 @@ from sqlalchemy import text
 from sqlalchemy.orm.session import Session
 
 
+default_max_forecast_horizon_minutes = {
+    "cnn": 480,
+    "National_xg": 40 * 60,
+    "pvnet_v2": 480,
+    "pvnet_day_ahead": 40 * 60,
+    "pvnet_gsp_sum": 480,
+}
+
+
 def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
     """
     Filter the query on the datetime interval

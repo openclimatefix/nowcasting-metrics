@@ -10,7 +10,7 @@ from sqlalchemy import Time, cast
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
-from nowcasting_metrics.metrics.utils import make_forecast_sub_query, make_gsp_sub_query
+from nowcasting_metrics.metrics.utils import default_max_forecast_horizon_minutes, make_forecast_sub_query, make_gsp_sub_query
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
@@ -126,10 +126,14 @@ def make_me(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40*60, "pvnet_v2": 480, "pvnet_day_ahead": 40*60}
+        max_forecast_horizon_minutes = default_max_forecast_horizon_minutes
 
     # loop over forecast horizons
     for model_name in ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]:
+
+        if model_name not in max_forecast_horizon_minutes:
+            max_forecast_horizon_minutes[model_name] = default_max_forecast_horizon_minutes[model_name]
+
         for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes[model_name], 30):
             make_me_one_gsp_with_forecast_horizon_and_one_half_hour(
                 session=session,

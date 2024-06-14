@@ -12,6 +12,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
 from nowcasting_metrics.metrics.utils import (
+    default_max_forecast_horizon_minutes,
     filter_query_on_datetime_interval,
     make_forecast_sub_query,
     make_gsp_sub_query,
@@ -332,13 +333,7 @@ def make_rmse(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {
-            "cnn": 480,
-            "National_xg": 40 * 60,
-            "pvnet_v2": 480,
-            "pvnet_gsp_sum": 480,
-            "pvnet_day_ahead": 40 * 60,
-        }
+        max_forecast_horizon_minutes = default_max_forecast_horizon_minutes
 
     models = ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]
     if use_pvnet_gsp_sum:
@@ -355,7 +350,7 @@ def make_rmse(
             model_name=model_name
         )
 
-        make_rmse_all_gsp(session=session, datetime_interval=datetime_interval)
+        make_rmse_all_gsp(session=session, datetime_interval=datetime_interval, model_name=model_name)
 
         # loop over forecast horizons
         for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes[model_name], 30):
