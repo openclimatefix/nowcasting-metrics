@@ -126,7 +126,7 @@ def make_me(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40*60, "pvnet_v2": 480}
+        max_forecast_horizon_minutes = {"cnn": 480, "National_xg": 40*60, "pvnet_v2": 480, "pvnet_day_ahead": 40*60}
 
     # loop over forecast horizons
     for model_name in ["cnn", "pvnet_v2", "National_xg"]:

@@ -141,7 +141,7 @@ def make_ramp_rate(
     """
     forecast_horizon_hours = [0, 1, 2]
     for forecast_horizon_hour in forecast_horizon_hours:
-        for model_name in ["cnn", "pvnet_v2", "National_xg"]:
+        for model_name in ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]:
             make_ramp_rate_one_forecast_horizon_minutes(
                 session=session,
                 model_name=model_name,

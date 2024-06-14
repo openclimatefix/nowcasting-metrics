@@ -366,6 +366,7 @@ def make_mae(
             "National_xg": 40 * 60,
             "pvnet_v2": 480,
             "pvnet_gsp_sum": 480,
+            "pvnet_day_ahead": 40 * 60,
         }
 
     # this gets all the models used in the last week
