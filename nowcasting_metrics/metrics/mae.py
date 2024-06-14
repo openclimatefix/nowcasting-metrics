@@ -424,7 +424,7 @@ def make_mae(
         make_pvlive_mae(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
 
     # all gsps
-    for model_name in ["cnn", "pvnet_v2"]:
+    for model_name in ["cnn", "pvnet_v2", "pvnet_day_ahead"]:
         for gps_id in range(1, n_gsps + 1):
             make_mae_one_gsp(
                 session=session,

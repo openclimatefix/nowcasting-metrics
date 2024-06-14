@@ -340,12 +340,12 @@ def make_rmse(
             "pvnet_day_ahead": 40 * 60,
         }
 
-    models = ["cnn", "pvnet_v2", "National_xg"]
+    models = ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]
     if use_pvnet_gsp_sum:
         models.append("pvnet_gsp_sum")
 
     # national
-    for model_name in ["cnn", "pvnet_v2", "National_xg"]:
+    for model_name in ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]:
         make_rmse_one_gsp(
             session=session,
             datetime_interval=datetime_interval,
@@ -378,7 +378,7 @@ def make_rmse(
             )
 
     # loop over gsps
-    for model_name in ["cnn", "pvnet_v2"]:
+    for model_name in ["cnn", "pvnet_v2", "pvnet_day_ahead"]:
         for gps_id in range(0, n_gsps + 1):
             make_rmse_one_gsp(session=session, datetime_interval=datetime_interval, gsp_id=gps_id, model_name=model_name)
 
