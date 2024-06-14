@@ -23,6 +23,8 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
 from nowcasting_metrics.metrics.utils import (
+    default_max_forecast_horizon_minutes,
+    default_gsp_models,
     filter_query_on_datetime_interval,
     make_forecast_sub_query,
     make_gsp_sub_query,
@@ -361,12 +363,7 @@ def make_mae(
     """
 
     if max_forecast_horizon_minutes is None:
-        max_forecast_horizon_minutes = {
-            "cnn": 480,
-            "National_xg": 40 * 60,
-            "pvnet_v2": 480,
-            "pvnet_gsp_sum": 480,
-        }
+        max_forecast_horizon_minutes = default_max_forecast_horizon_minutes
 
     # this gets all the models used in the last week
     models = get_models(
@@ -423,7 +420,7 @@ def make_mae(
         make_pvlive_mae(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
 
     # all gsps
-    for model_name in ["cnn", "pvnet_v2"]:
+    for model_name in default_gsp_models:
         for gps_id in range(1, n_gsps + 1):
             make_mae_one_gsp(
                 session=session,
