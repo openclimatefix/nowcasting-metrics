@@ -26,6 +26,7 @@ from nowcasting_metrics.metrics.utils import (
     default_max_forecast_horizon_minutes,
     default_gsp_models,
     filter_query_on_datetime_interval,
+    get_forecast_range,
     make_forecast_sub_query,
     make_gsp_sub_query,
     make_pvlive_subquery,
@@ -396,7 +397,7 @@ def make_mae(
         )
 
         # loop over forecast horizons
-        for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes[model_name], 30):
+        for forecast_horizon_minutes in get_forecast_range(max_forecast_horizon_minutes[model_name]):
             make_mae_one_gsp_with_forecast_horizon(
                 session=session,
                 datetime_interval=datetime_interval,
