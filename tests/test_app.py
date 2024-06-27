@@ -41,7 +41,7 @@ def test_app(
     assert response.exit_code == 0, response.exception
 
     metric_values = db_session.query(MetricValueSQL).all()
-    assert len(metric_values) == 256
+    assert len(metric_values) == 184
     # National
     # - with and without adjuster = 2
     # - 8 forecast horizons with and without adjuster = 16
@@ -52,14 +52,13 @@ def test_app(
     # - x2 models = 12
     # GPS PVlive = 6
     # Total metrics 72
-    # x2 due to MAE and RMSE
-    # Total is 144
+    # RMSE has been removed
     # + ME # 3 models * 8 forecast horizons * 2 half hours  = 48
     # + Ramp rate 3 models * 3 forecast horizons  = 9 # TODO this is 0 right now
-    # Total is 192
+    # Total is 120
     # Pinball 2 models * 8 forecast horizons* 2 p levels  = 32
     # Exceedance 2 models * 8 forecast horizons * 2 p levels  = 32
-    # Total 256
+    # Total 184
 
     metrics = db_session.query(MetricSQL).all()
     assert len(metrics) == 12

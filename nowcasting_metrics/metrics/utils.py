@@ -24,6 +24,25 @@ default_gsp_models = ["cnn", "pvnet_v2", "pvnet_day_ahead"]
 default_national_models = ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead"]
 default_probabilistic_models = ["pvnet_v2", "National_xg", "pvnet_day_ahead"]
 
+
+def get_forecast_range(max_forecast_horizon_minutes) -> list[int]:
+    """
+    Get the forecast range
+
+    0-4 hours is in 30 minutes, and then in 1 hour blocks from there on
+
+    :param max_forecast_horizon_minutes: the maximum forecast horizon
+    :return: the forecast range
+    """
+
+    if max_forecast_horizon_minutes <= 480:
+        return list(range(0, max_forecast_horizon_minutes, 30))
+    else:
+        forecast_range_4 = list(range(0, 480, 30))
+        forecast_range_ge_4 = list(range(480, max_forecast_horizon_minutes, 60))
+        return forecast_range_4 + forecast_range_ge_4
+
+
 def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
     """
     Filter the query on the datetime interval

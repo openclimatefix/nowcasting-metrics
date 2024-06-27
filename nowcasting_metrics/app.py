@@ -102,7 +102,7 @@ def app(
             make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
             # run daily RMSE
-            make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+            # make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
             # run ramp rate
             make_ramp_rate(session=session, datetime_interval=datetime_interval)
