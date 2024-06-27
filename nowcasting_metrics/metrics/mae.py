@@ -207,6 +207,7 @@ def make_mae_one_gsp(
     gsp_id: int,
     metric: Optional[Metric] = latest_mae,
     model_name: Optional[str] = None,
+    use_adjuster: bool = True,
 ) -> (int, int):
     """
     Calculate the MAE for one GSP, and save to database
@@ -217,6 +218,7 @@ def make_mae_one_gsp(
     :param use_adjuster: option to use the adjuster or not.
     :param metric: the metric to use
     :param model_name: the model name of the forecast. This is optional.
+    :param use_adjuster: option to use the adjuster or not.
     :return: 1. the MAE, 2. MAE with adjuster, 3. the number of data points
     """
 
@@ -260,15 +262,16 @@ def make_mae_one_gsp(
         model_name=model_name,
     )
 
-    save_metric_value_to_database(
-        session=session,
-        value=value_adjuster,
-        number_of_data_points=number_of_data_points,
-        datetime_interval=datetime_interval,
-        metric=latest_mae_with_adjuster,
-        location=get_location(gsp_id=gsp_id, session=session),
-        model_name=model_name,
-    )
+    if use_adjuster:
+        save_metric_value_to_database(
+            session=session,
+            value=value_adjuster,
+            number_of_data_points=number_of_data_points,
+            datetime_interval=datetime_interval,
+            metric=latest_mae_with_adjuster,
+            location=get_location(gsp_id=gsp_id, session=session),
+            model_name=model_name,
+        )
 
     return value, value_adjuster, number_of_data_points
 
@@ -426,6 +429,7 @@ def make_mae(
                 datetime_interval=datetime_interval,
                 gsp_id=gps_id,
                 model_name=model_name,
+                use_adjuster=False,
             )
 
         make_mae_all_gsp(
