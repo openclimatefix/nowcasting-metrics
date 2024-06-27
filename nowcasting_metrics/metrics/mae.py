@@ -123,7 +123,6 @@ def make_mae_one_gsp_with_forecast_horizon(
     datetime_interval: DatetimeInterval,
     gsp_id: int,
     forecast_horizon_minutes: int,
-    use_adjuster: bool = False,
     model: Optional[Union[ForecastValueSQL, ForecastValueSevenDaysSQL]] = None,
     metric: Optional[Metric] = latest_mae,
     model_name: Optional[str] = None,
@@ -136,16 +135,15 @@ def make_mae_one_gsp_with_forecast_horizon(
     :param gsp_id: the gsp id
     :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
         made 60 minutes before target time
-    :param use_adjuster: option to use the adjuster or not.
     :param model: the model to use
     :param metric: the metric to use
     :param model_name: the model name of the forecast. This is optional.
-    :return: 1. the MAE, 2. the number of data points
+    :return: 1. the MAE, 2. the MAE with the adjuster 3. the number of data points
     """
 
     logger.debug(
         f"Calculating {metric.name} for {gsp_id=} "
-        f"and {forecast_horizon_minutes=} with {use_adjuster=} for {model_name=}"
+        f"and {forecast_horizon_minutes=} for {model_name=}"
     )
 
     if model is None:
@@ -162,18 +160,19 @@ def make_mae_one_gsp_with_forecast_horizon(
     )
 
     # make full query
-    query = make_mae_query(session, model=model, use_adjuster=use_adjuster)
+    query = make_mae_query(session, model=model)
 
     query = query.filter(model.uuid.in_(sub_query_forecast))
     query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
     query = query.filter(GSPYieldSQL.datetime_utc == model.target_time)
     results = query.all()
 
-    number_of_data_points = results[0][1]
+    number_of_data_points = results[0][2]
     value = results[0][0]
+    value_adjuster = results[0][1]
 
     logger.debug(
-        f"Found MAE of {value} from {number_of_data_points} "
+        f"Found MAE of {value} from {number_of_data_points} ({value_adjuster} with adjuster) "
         f"data points for forecast horizon {forecast_horizon_minutes} for {gsp_id=}."
     )
 
@@ -188,14 +187,24 @@ def make_mae_one_gsp_with_forecast_horizon(
         model_name=model_name,
     )
 
-    return value, number_of_data_points
+    save_metric_value_to_database(
+        session=session,
+        value=value_adjuster,
+        number_of_data_points=number_of_data_points,
+        datetime_interval=datetime_interval,
+        metric=latest_mae_with_adjuster,
+        location=get_location(gsp_id=gsp_id, session=session),
+        forecast_horizon_minutes=forecast_horizon_minutes,
+        model_name=model_name,
+    )
+
+    return value, value_adjuster, number_of_data_points
 
 
 def make_mae_one_gsp(
     session: Session,
     datetime_interval: DatetimeInterval,
     gsp_id: int,
-    use_adjuster: Optional[bool] = False,
     metric: Optional[Metric] = latest_mae,
     model_name: Optional[str] = None,
 ) -> (int, int):
@@ -208,7 +217,7 @@ def make_mae_one_gsp(
     :param use_adjuster: option to use the adjuster or not.
     :param metric: the metric to use
     :param model_name: the model name of the forecast. This is optional.
-    :return: 1. the MAE, 2. the number of data points
+    :return: 1. the MAE, 2. MAE with adjuster, 3. the number of data points
     """
 
     logger.debug(
@@ -217,7 +226,7 @@ def make_mae_one_gsp(
         f"and end-{datetime_interval.end_datetime_utc}"
     )
 
-    query = make_mae_query(session, use_adjuster=use_adjuster, model_name=model_name)
+    query = make_mae_query(session, model_name=model_name)
 
     # filter on gsp
     query = query.filter()
@@ -235,8 +244,9 @@ def make_mae_one_gsp(
 
     results = query.all()
 
-    number_of_data_points = results[0][1]
+    number_of_data_points = results[0][2]
     value = results[0][0]
+    value_adjuster = results[0][1]
 
     logger.debug(f"Found MAE of {value} from {number_of_data_points} data points.")
 
@@ -250,7 +260,17 @@ def make_mae_one_gsp(
         model_name=model_name,
     )
 
-    return value, number_of_data_points
+    save_metric_value_to_database(
+        session=session,
+        value=value_adjuster,
+        number_of_data_points=number_of_data_points,
+        datetime_interval=datetime_interval,
+        metric=latest_mae_with_adjuster,
+        location=get_location(gsp_id=gsp_id, session=session),
+        model_name=model_name,
+    )
+
+    return value, value_adjuster, number_of_data_points
 
 
 def make_mae_all_gsp(
@@ -295,7 +315,7 @@ def make_mae_all_gsp(
 
     results = query.all()
 
-    number_of_data_points = results[0][1]
+    number_of_data_points = results[0][2]
     value = results[0][0]
 
     logger.debug(
@@ -319,7 +339,6 @@ def make_mae_all_gsp(
 def make_mae_query(
     session,
     model: Union[ForecastValueSevenDaysSQL, ForecastValueLatestSQL] = ForecastValueLatestSQL,
-    use_adjuster: bool = False,
     model_name: Optional[str] = None,
 ):
     """
@@ -327,16 +346,14 @@ def make_mae_query(
 
     :param session: database sessions
     :param model: either ForecastValueSQL or ForecastValueLatestSQL
-    :param use_adjuster: option to use adjuster or not
     :param model_name: the model name of the forecast. This is optional.
     :return: query
     """
     forecast = model.expected_power_generation_megawatts
-    if use_adjuster:
-        forecast = forecast - model.adjust_mw
 
     query = session.query(
         func.avg(func.abs(forecast - GSPYieldSQL.solar_generation_kw / 1000)),
+        func.avg(func.abs(forecast - model.adjust_mw - GSPYieldSQL.solar_generation_kw / 1000)),
         func.count(model.expected_power_generation_megawatts),
     )
 
@@ -387,15 +404,6 @@ def make_mae(
             session=session, datetime_interval=datetime_interval, gsp_id=0, model_name=model_name
         )
 
-        make_mae_one_gsp(
-            session=session,
-            datetime_interval=datetime_interval,
-            gsp_id=0,
-            use_adjuster=True,
-            metric=latest_mae_with_adjuster,
-            model_name=model_name,
-        )
-
         # loop over forecast horizons
         for forecast_horizon_minutes in get_forecast_range(max_forecast_horizon_minutes[model_name]):
             make_mae_one_gsp_with_forecast_horizon(
@@ -403,16 +411,6 @@ def make_mae(
                 datetime_interval=datetime_interval,
                 gsp_id=0,
                 forecast_horizon_minutes=forecast_horizon_minutes,
-                model_name=model_name,
-            )
-
-            make_mae_one_gsp_with_forecast_horizon(
-                session=session,
-                datetime_interval=datetime_interval,
-                gsp_id=0,
-                forecast_horizon_minutes=forecast_horizon_minutes,
-                use_adjuster=True,
-                metric=latest_mae_with_adjuster,
                 model_name=model_name,
             )
 
