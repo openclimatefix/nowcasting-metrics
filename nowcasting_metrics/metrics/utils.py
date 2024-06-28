@@ -96,11 +96,11 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     # only load relative new forecasts, stops looking over all forecasts
     # if the start date is 2023-02-01 and horizon is 60 minutes,
     # then we want any forecast that is newer than 2023-02-01 00:00:00 - 60 minutes - 1 day (buffer)
+    # created_utc > start_datetime - forecast_horizon - 1 day
+    # forecast_horizon +  1 day > start_datetime - created_utc
     sub_query_forecast = sub_query_forecast.filter(
-        ForecastSQL.created_utc >
-        datetime_interval.start_datetime_utc
-        - text(f"interval '{forecast_horizon_minutes} minute'")
-        - text(f"interval '1 day'")
+        datetime_interval.start_datetime_utc - ForecastSQL.created_utc
+        < text(f"interval '{forecast_horizon_minutes} minute' + interval '1 day' ")
     )
     sub_query_forecast = sub_query_forecast.filter(
         model.target_time > datetime_interval.start_datetime_utc
