@@ -80,6 +80,7 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.location)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.model)
     sub_query_forecast = sub_query_forecast.filter(LocationSQL.gsp_id == gsp_id)
+
     # this seems to only work for postgres
     sub_query_forecast = sub_query_forecast.filter(
         model.target_time - model.created_utc
@@ -90,6 +91,16 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     # then we want any older forecast than 2023-01-31 23:00:00
     sub_query_forecast = sub_query_forecast.filter(
         datetime_interval.start_datetime_utc - model.created_utc < text(f"interval '{forecast_horizon_minutes} minute'")
+    )
+
+    # only load relative new forecasts, stops looking over all forecasts
+    # if the start date is 2023-02-01 and horizon is 60 minutes,
+    # then we want any forecast that is newer than 2023-02-01 00:00:00 - 60 minutes - 1 day (buffer)
+    sub_query_forecast = sub_query_forecast.filter(
+        ForecastSQL.created_utc >
+        datetime_interval.start_datetime_utc
+        - text(f"interval '{forecast_horizon_minutes} minute'")
+        - text(f"interval '1 day'")
     )
     sub_query_forecast = sub_query_forecast.filter(
         model.target_time > datetime_interval.start_datetime_utc
