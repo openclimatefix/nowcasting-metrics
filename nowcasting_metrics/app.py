@@ -13,6 +13,7 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import sentry_sdk
 
 import click
 from nowcasting_datamodel import N_GSP
@@ -34,6 +35,16 @@ logging.basicConfig(
     format="[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+#sentry
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    environment=os.getenv("ENVIRONMENT", "local"),
+    traces_sample_rate=1
+)
+
+sentry_sdk.set_tag("app_name", "nowcasting_metrics")
+sentry_sdk.set_tag("version", nowcasting_metrics.__version__)
 
 
 @click.command()
