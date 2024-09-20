@@ -46,7 +46,6 @@ sentry_sdk.init(
 sentry_sdk.set_tag("app_name", "nowcasting_metrics")
 sentry_sdk.set_tag("version", nowcasting_metrics.__version__)
 
-
 @click.command()
 @click.option(
     "--db-url",
