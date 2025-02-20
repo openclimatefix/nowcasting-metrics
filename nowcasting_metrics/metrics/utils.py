@@ -128,6 +128,7 @@ def make_gsp_sub_query(datetime_interval, gsp_id, session):
     """
     # Make gsp subquery
     sub_query_gsp = session.query(GSPYieldSQL.id)
+    sub_query_gsp = sub_query_gsp.distinct(GSPYieldSQL.datetime_utc)
     sub_query_gsp = sub_query_gsp.join(GSPYieldSQL.location)
     sub_query_gsp = sub_query_gsp.filter(LocationSQL.gsp_id == gsp_id)
     sub_query_gsp = sub_query_gsp.filter(
