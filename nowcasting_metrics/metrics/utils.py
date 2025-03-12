@@ -18,6 +18,7 @@ default_max_forecast_horizon_minutes = {
     "pvnet_v2": 480,
     "pvnet_day_ahead": 40 * 60,
     "pvnet_gsp_sum": 480,
+    "neso-solar-forecast": 24*60*4 # 4 days
 }
 
 default_gsp_models = ["cnn", "pvnet_v2", "pvnet_day_ahead"]
