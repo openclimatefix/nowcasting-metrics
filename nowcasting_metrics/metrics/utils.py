@@ -28,14 +28,13 @@ default_probabilistic_models = ["pvnet_v2", "National_xg", "pvnet_day_ahead"]
 
 def get_forecast_range(max_forecast_horizon_minutes) -> list[int]:
     """
-    Get the forecast range
-
-    0-4 hours is in 30 minutes, and then in 1 hour blocks from there on
+    Get the forecast range.
 
     :param max_forecast_horizon_minutes: the maximum forecast horizon
     :return: the forecast range
-    """
 
+    0-4 hours is in 30-minute increments, then 1-hour increments thereafter.
+    """
     if max_forecast_horizon_minutes <= 480:
         return list(range(0, max_forecast_horizon_minutes, 30))
     else:
@@ -46,11 +45,8 @@ def get_forecast_range(max_forecast_horizon_minutes) -> list[int]:
 
 def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
     """
-    Filter the query on the datetime interval
-
+     Filter the query on the datetime interval
     :param datetime_interval: the datetime interval object
-    :param query: sql query
-    :return: query
     """
     query = query.filter(ForecastValueLatestSQL.target_time > datetime_interval.start_datetime_utc)
     query = query.filter(ForecastValueLatestSQL.target_time <= datetime_interval.end_datetime_utc)
@@ -58,23 +54,37 @@ def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query
     return query
 
 
-def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id, session, model=ForecastValueSevenDaysSQL, model_name='cnn'):
+def make_forecast_sub_query(
+    datetime_interval: DatetimeInterval,
+    forecast_horizon_minutes: int,
+    gsp_id: int,
+    session: Session,
+    model_name: str = "cnn",
+):
     """
-    Make SQL sub query to get latest forecast, given a forecast horizon
+    Make an SQL subquery to get the 'latest forecast' for a given forecast horizon.
 
-    This filters the ForecastValueSQL, and filters on
-    - target_time
-    - gsp_id
-    - created_utc
+    This filters ForecastValueSQL on:
+      - target_time
+      - gsp_id
+      - created_utc
+    and orders by (target_time, created_utc DESC).
 
-    :param datetime_interval: the datetime interval
-    :param forecast_horizon_minutes: the forecast horizon
-        ie. Use results from forecast that are made 60 minutes before target time
-    :param gsp_id: the gsp id
-    :param session: database sessions
-    :return: sub query
+    :param datetime_interval: The datetime range to filter on
+    :param forecast_horizon_minutes: How many minutes before the target_time the forecast was created
+    :param gsp_id: The GSP ID to filter on
+    :param session: The SQLAlchemy session
+    :param model_name: The name of the model (e.g. "cnn", "neso-solar-forecast", etc.)
+    :return: A subquery object
     """
+
     # make forecast sub query
+    if model_name == "neso-solar-forecast":
+        model = ForecastValueFourteenDaysSQL
+    else:
+        model = ForecastValueSevenDaysSQL
+
+    # Build the subquery
     sub_query_forecast = session.query(model.uuid)
     sub_query_forecast = sub_query_forecast.distinct(model.target_time)
     sub_query_forecast = sub_query_forecast.join(ForecastSQL)
@@ -82,64 +92,49 @@ def make_forecast_sub_query(datetime_interval, forecast_horizon_minutes, gsp_id,
     sub_query_forecast = sub_query_forecast.join(ForecastSQL.model)
     sub_query_forecast = sub_query_forecast.filter(LocationSQL.gsp_id == gsp_id)
 
-    # this seems to only work for postgres
+    # Only use forecasts that were created at least X minutes before their target_time
     sub_query_forecast = sub_query_forecast.filter(
-        model.target_time - model.created_utc
-        >= text(f"interval '{forecast_horizon_minutes} minute'")
+        model.target_time - model.created_utc >= text(f"interval '{forecast_horizon_minutes} minute'")
     )
 
-    # if the start date is 2023-02-01 and horizon is 60 minutes,
-    # then we want any older forecast than 2023-01-31 23:00:00
+    # Exclude forecasts created too close to the start date
     sub_query_forecast = sub_query_forecast.filter(
-        datetime_interval.start_datetime_utc - model.created_utc < text(f"interval '{forecast_horizon_minutes} minute'")
+        datetime_interval.start_datetime_utc - model.created_utc
+        < text(f"interval '{forecast_horizon_minutes} minute'")
     )
 
-    # only load relative new forecasts, stops looking over all forecasts
-    # if the start date is 2023-02-01 and horizon is 60 minutes,
-    # then we want any forecast that is newer than 2023-02-01 00:00:00 - 60 minutes - 1 day (buffer)
-    # created_utc > start_datetime - forecast_horizon - 1 day
-    # forecast_horizon +  1 day > start_datetime - created_utc
+    # Limit how far back in time we look for forecasts
     sub_query_forecast = sub_query_forecast.filter(
         datetime_interval.start_datetime_utc - ForecastSQL.created_utc
-        < text(f"interval '{forecast_horizon_minutes} minute' + interval '1 day' ")
+        < text(f"interval '{forecast_horizon_minutes} minute' + interval '1 day'")
     )
-    sub_query_forecast = sub_query_forecast.filter(
-        model.target_time > datetime_interval.start_datetime_utc
-    )
-    sub_query_forecast = sub_query_forecast.filter(
-        model.target_time <= datetime_interval.end_datetime_utc
-    )
+
+    # Target times must be within the datetime interval
+    sub_query_forecast = sub_query_forecast.filter(model.target_time > datetime_interval.start_datetime_utc)
+    sub_query_forecast = sub_query_forecast.filter(model.target_time <= datetime_interval.end_datetime_utc)
+
+    # Filter by the model name
     if model_name is not None:
         sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == model_name)
-    sub_query_forecast = sub_query_forecast.order_by(
-        model.target_time, model.created_utc.desc()
-    )
-    sub_query_forecast = sub_query_forecast.subquery()
-    return sub_query_forecast
+
+    # Sort by target_time ascending, created_utc descending
+    sub_query_forecast = sub_query_forecast.order_by(model.target_time, model.created_utc.desc())
+
+    # Return the subquery
+    return sub_query_forecast.subquery()
 
 
-def make_gsp_sub_query(datetime_interval, gsp_id, session):
+def make_gsp_sub_query(datetime_interval: DatetimeInterval, gsp_id: int, session: Session):
     """
-    Get the GSP yeilds for a give datetime interval
-
-    :param datetime_interval:
-    :param gsp_id: the gsp id
-    :param session: sql session
-    :return: sub query
+    Get the GSP yields for a given datetime interval.
     """
-    # Make gsp subquery
     sub_query_gsp = session.query(GSPYieldSQL.id)
     sub_query_gsp = sub_query_gsp.join(GSPYieldSQL.location)
     sub_query_gsp = sub_query_gsp.filter(LocationSQL.gsp_id == gsp_id)
-    sub_query_gsp = sub_query_gsp.filter(
-        GSPYieldSQL.datetime_utc > datetime_interval.start_datetime_utc
-    )
-    sub_query_gsp = sub_query_gsp.filter(
-        GSPYieldSQL.datetime_utc <= datetime_interval.end_datetime_utc
-    )
+    sub_query_gsp = sub_query_gsp.filter(GSPYieldSQL.datetime_utc > datetime_interval.start_datetime_utc)
+    sub_query_gsp = sub_query_gsp.filter(GSPYieldSQL.datetime_utc <= datetime_interval.end_datetime_utc)
     sub_query_gsp = sub_query_gsp.filter(GSPYieldSQL.regime == "day-after")
-    sub_query_gsp = sub_query_gsp.subquery()
-    return sub_query_gsp
+    return sub_query_gsp.subquery()
 
 
 def make_pvlive_subquery(
@@ -147,21 +142,13 @@ def make_pvlive_subquery(
 ):
     """
     Make PV live query
-
-    :param session: database sessions
-    :param datetime_interval: which date interval to filer on
-    :param regime: which regime to filter on
-    :param gsp_id: which gsp_id to filer on
     """
-
     query = session.query(GSPYieldSQL)
-
-    # sub query for in-day
     query = query.filter(GSPYieldSQL.datetime_utc >= datetime_interval.start_datetime_utc)
     query = query.filter(GSPYieldSQL.datetime_utc < datetime_interval.end_datetime_utc)
     query = query.filter(GSPYieldSQL.regime == regime)
 
-    # filter on location
+    # Filter on location
     query = query.join(LocationSQL)
     query = query.filter(LocationSQL.gsp_id == gsp_id)
 
