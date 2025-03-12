@@ -4,7 +4,6 @@ from nowcasting_datamodel.models import (
     ForecastSQL,
     ForecastValueLatestSQL,
     ForecastValueSevenDaysSQL,
-    ForecastValueFourteenDaysSQL,  # <-- Make sure this exists in nowcasting_datamodel
     GSPYieldSQL,
     LocationSQL,
     MLModelSQL,
@@ -30,6 +29,9 @@ def get_forecast_range(max_forecast_horizon_minutes) -> list[int]:
     """
     Get the forecast range.
 
+    :param max_forecast_horizon_minutes: the maximum forecast horizon
+    :return: the forecast range
+
     0-4 hours is in 30-minute increments, then 1-hour increments thereafter.
     """
     if max_forecast_horizon_minutes <= 480:
@@ -42,7 +44,8 @@ def get_forecast_range(max_forecast_horizon_minutes) -> list[int]:
 
 def filter_query_on_datetime_interval(datetime_interval: DatetimeInterval, query):
     """
-    Filter the query on the given DatetimeInterval.
+     Filter the query on the datetime interval
+    :param datetime_interval: the datetime interval object
     """
     query = query.filter(ForecastValueLatestSQL.target_time > datetime_interval.start_datetime_utc)
     query = query.filter(ForecastValueLatestSQL.target_time <= datetime_interval.end_datetime_utc)
@@ -74,7 +77,7 @@ def make_forecast_sub_query(
     :return: A subquery object
     """
 
-    # Choose which ForecastValue model to use based on model_name
+    # make forecast sub query
     if model_name == "neso-solar-forecast":
         model = ForecastValueFourteenDaysSQL
     else:
@@ -110,7 +113,8 @@ def make_forecast_sub_query(
     sub_query_forecast = sub_query_forecast.filter(model.target_time <= datetime_interval.end_datetime_utc)
 
     # Filter by the model name
-    sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == model_name)
+    if model_name is not None:
+        sub_query_forecast = sub_query_forecast.filter(MLModelSQL.name == model_name)
 
     # Sort by target_time ascending, created_utc descending
     sub_query_forecast = sub_query_forecast.order_by(model.target_time, model.created_utc.desc())
@@ -136,7 +140,7 @@ def make_pvlive_subquery(
     session: Session, datetime_interval: DatetimeInterval, regime: str, gsp_id: int
 ):
     """
-    Make a PV 'live' query for in-day data.
+    Make PV live query
     """
     query = session.query(GSPYieldSQL)
     query = query.filter(GSPYieldSQL.datetime_utc >= datetime_interval.start_datetime_utc)
