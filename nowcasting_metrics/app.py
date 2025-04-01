@@ -81,6 +81,9 @@ def app(
     :param datetime_now: the datetime now, for making metris
     :param n_gsps: the number of gsps we should use
     """
+    # Get the environment variables to determine which metrics to run
+    run_metrics = os.getenv("RUN_METRICS", "true").lower() == "true"
+    run_me = os.getenv("RUN_ME", "true").lower() == "true"
 
     logger.info(f"Running Metrics app ({nowcasting_metrics.__version__})")
     n_gsps = int(n_gsps)
@@ -95,7 +98,7 @@ def app(
 
     connection = DatabaseConnection(url=db_url, base=Base_Forecast, echo=False)
     with connection.get_session() as session:
-        # check metrics are in the datbase
+        # check metrics are in the database
         check_metrics_in_database(session=session)
 
         # get start and end datetime
@@ -108,29 +111,33 @@ def app(
         logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
         try:
-            # run daily MAE
-            make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+            # Check if RUN_METRICS is enabled (default: true). If true, run standard forecast evaluation metrics
+            if run_metrics:
+                # run daily MAE
+                make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
-            # run daily RMSE
-            # make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+                # run daily RMSE
+                # make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
-            # run ramp rate
-            make_ramp_rate(session=session, datetime_interval=datetime_interval)
+                # run ramp rate
+                make_ramp_rate(session=session, datetime_interval=datetime_interval)
 
-            # run probabilistic metrics
-            make_probabilistic(session=session, datetime_interval=datetime_interval)
+                # run probabilistic metrics
+                make_probabilistic(session=session, datetime_interval=datetime_interval)
 
-            # get start and end datetime for 1 week ago
-            start_datetime = datetime_now - timedelta(days=7)
-            start_datetime = datetime.combine(start_datetime, datetime.min.time())
-            end_datetime = start_datetime + timedelta(days=7)
-            datetime_interval = get_datetime_interval(
-                start_datetime_utc=start_datetime, end_datetime_utc=end_datetime, session=session
-            )
-            logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
+            # Check if RUN_ME is enabled (default: true). If true, compute the Mean Error (ME) metric separately
+            if run_me:
+                # get start and end datetime for 1 week ago
+                start_datetime = datetime_now - timedelta(days=7)
+                start_datetime = datetime.combine(start_datetime, datetime.min.time())
+                end_datetime = start_datetime + timedelta(days=7)
+                datetime_interval = get_datetime_interval(
+                    start_datetime_utc=start_datetime, end_datetime_utc=end_datetime, session=session
+                )
+                logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
-            # getting half hour metrics
-            make_me(session=session, datetime_interval=datetime_interval)
+                # getting half hour metrics
+                make_me(session=session, datetime_interval=datetime_interval)
 
             # save values to database
             session.commit()
