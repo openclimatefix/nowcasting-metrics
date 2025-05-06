@@ -21,22 +21,9 @@ def db_connection():
     connection.create_all()
 
     Base_PV.metadata.create_all(connection.engine)
-    partitions = make_partitions(2022, 1, 2022)
-
-    # make partitions
-    for partition in partitions:
-        if not connection.engine.dialect.has_table(
-            connection=connection.engine.connect(), table_name=partition.__table__.name
-        ):
-            partition.__table__.create(bind=connection.engine)
+    make_partitions(2022, 1, 2022)
 
     yield connection
-
-    for partition in partitions:
-        if not connection.engine.dialect.has_table(
-            connection=connection.engine.connect(), table_name=partition.__table__.name
-        ):
-            partition.__table__.drop(bind=connection.engine)
 
     connection.drop_all()
     Base_PV.metadata.drop_all(connection.engine)
