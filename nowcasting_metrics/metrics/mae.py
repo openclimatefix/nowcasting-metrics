@@ -224,7 +224,7 @@ def make_mae_one_gsp(
 
     logger.debug(
         f"Calculating MAE for last forecast for {gsp_id=} for {model_name=} for"
-        f"start={datetime_interval.end_datetime_utc} "
+        f"start={datetime_interval.start_datetime_utc} "
         f"and end-{datetime_interval.end_datetime_utc}"
     )
 
