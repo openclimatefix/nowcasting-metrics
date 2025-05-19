@@ -79,4 +79,3 @@ def save_metric_value_to_database(
             metric_value_sql.p_level = plevel
 
         session.add(metric_value_sql)
-        session.commit()
