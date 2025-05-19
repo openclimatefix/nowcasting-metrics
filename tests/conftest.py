@@ -17,7 +17,7 @@ def db_connection():
     url = os.getenv("DB_URL", "sqlite:///test.db")
     os.environ["DB_URL"] = url
 
-    connection = DatabaseConnection(url=url, echo=True)
+    connection = DatabaseConnection(url=url, echo=False)
     connection.create_all()
 
     Base_PV.metadata.create_all(connection.engine)

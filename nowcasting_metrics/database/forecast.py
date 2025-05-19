@@ -15,7 +15,7 @@ from sqlalchemy import select
 logger = logging.getLogger(__name__)
 
 
-def get_forecast_values(session:Session, model_name: str) -> pd.DataFrame:
+def get_forecast_values(session: Session, model_name: str) -> pd.DataFrame:
     """
     Get all forecast values for the last seven days for a given model name.
 
@@ -50,7 +50,9 @@ def get_forecast_values(session:Session, model_name: str) -> pd.DataFrame:
     query = query.filter(ForecastValueSevenDaysSQL.forecast_id.in_(forecasts_ids))
 
     # order by target_time and created_utc desc
-    query = query.order_by(ForecastValueSevenDaysSQL.target_time, ForecastValueSevenDaysSQL.created_utc.desc())
+    query = query.order_by(
+        ForecastValueSevenDaysSQL.target_time, ForecastValueSevenDaysSQL.created_utc.desc()
+    )
 
     forecast_values_df = pd.read_sql_query(
         query, session.bind, index_col="target_time", parse_dates=["target_time", "created_utc"]
