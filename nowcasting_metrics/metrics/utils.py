@@ -25,6 +25,8 @@ default_gsp_models = ["cnn", "pvnet_v2", "pvnet_day_ahead"]
 default_national_models = ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead", "neso-solar-forecast"]
 default_probabilistic_models = ["pvnet_v2", "National_xg", "pvnet_day_ahead"]
 
+default_national_models = ["pvnet_v2"]
+
 
 def get_forecast_range(max_forecast_horizon_minutes) -> list[int]:
     """

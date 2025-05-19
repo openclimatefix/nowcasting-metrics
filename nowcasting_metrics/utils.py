@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 
 from nowcasting_datamodel.models.gsp import LocationSQL
-from nowcasting_datamodel.models.metric import DatetimeInterval, Metric, MetricValueSQL
+from nowcasting_datamodel.models.metric import DatetimeInterval, DatetimeIntervalSQL, Metric, MetricSQL, MetricValueSQL
 from nowcasting_datamodel.read.read_metric import get_datetime_interval, get_metric
 from nowcasting_datamodel.read.read_models import get_model
 
@@ -15,8 +15,8 @@ def save_metric_value_to_database(
     session,
     value: float,
     number_of_data_points: int,
-    metric: Metric,
-    datetime_interval: DatetimeInterval,
+    metric: Metric | MetricSQL,
+    datetime_interval: DatetimeInterval | DatetimeIntervalSQL,
     location: Optional[LocationSQL] = None,
     forecast_horizon_minutes: Optional[int] = None,
     time_of_day: Optional[datetime.time] = None,
@@ -48,12 +48,20 @@ def save_metric_value_to_database(
             logger.warning(f"{location.gsp_id=}")
 
     else:
-        metric_sql = get_metric(session=session, name=metric.name)
-        datetime_interval_sql = get_datetime_interval(
-            session=session,
-            start_datetime_utc=datetime_interval.start_datetime_utc,
-            end_datetime_utc=datetime_interval.end_datetime_utc,
-        )
+
+        if type(metric) is Metric:
+            metric_sql = get_metric(session=session, name=metric.name)
+        else:
+            metric_sql = metric
+
+        if type(datetime_interval) is DatetimeInterval:
+            datetime_interval_sql = get_datetime_interval(
+                session=session,
+                start_datetime_utc=datetime_interval.start_datetime_utc,
+                end_datetime_utc=datetime_interval.end_datetime_utc,
+            )
+        else:
+            datetime_interval_sql = datetime_interval
 
         metric_value_sql = MetricValueSQL(
             value=value,
@@ -79,4 +87,3 @@ def save_metric_value_to_database(
             metric_value_sql.p_level = plevel
 
         session.add(metric_value_sql)
-        session.commit()

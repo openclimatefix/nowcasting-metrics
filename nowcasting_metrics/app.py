@@ -23,6 +23,8 @@ from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read_metric import get_datetime_interval
 
 import nowcasting_metrics
+from nowcasting_metrics.database.forecast import get_all_forecast_values
+from nowcasting_metrics.database.gsp_yield import get_gsp_yield
 from nowcasting_metrics.metrics.mae import make_mae
 from nowcasting_metrics.metrics.me import make_me
 from nowcasting_metrics.metrics.metrics import check_metrics_in_database
@@ -137,7 +139,11 @@ def app(
                 logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
                 # getting half hour metrics
-                make_me(session=session, datetime_interval=datetime_interval)
+
+                all_forecast_values = get_all_forecast_values(session=session)
+                gsp_yields_df = get_gsp_yield(session=session, gsp_id=0)
+
+                make_me(session=session, datetime_interval=datetime_interval,all_forecast_values=all_forecast_values, gsp_yields=gsp_yields_df)
 
             # save values to database
             session.commit()
