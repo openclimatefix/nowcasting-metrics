@@ -3,9 +3,12 @@ from nowcasting_datamodel.models import ForecastValueLatestSQL
 from nowcasting_datamodel.models.gsp import GSPYieldSQL
 from nowcasting_datamodel.models.metric import MetricSQL, MetricValueSQL
 
+from nowcasting_metrics.metrics.me import me_hh
 from nowcasting_metrics.app import app
 
+from freezegun import freeze_time
 
+@freeze_time("2022-01-01 00:00:00")
 def test_app(
     db_connection,
     db_session,
@@ -40,6 +43,14 @@ def test_app(
     )
     assert response.exit_code == 0, response.exception
 
+    # check me results
+    # 3 models, 2 forecast horizon, 8 half hours
+    metric_values = (
+        db_session.query(MetricValueSQL).join(MetricSQL).filter(MetricSQL.name == me_hh.name).all()
+    )
+    assert len(metric_values) == 48
+
+    # check all metrics
     metric_values = db_session.query(MetricValueSQL).all()
     assert len(metric_values) == 184
     # National
