@@ -1,14 +1,17 @@
 from datetime import datetime, timedelta
 
 import logging
+import os
 import pandas as pd
 from sqlalchemy.orm.session import Session
+from typing import Optional
 
 from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models.forecast import ForecastSQL, ForecastValueSevenDaysSQL
 from nowcasting_datamodel.models.models import MLModelSQL
+from nowcasting_datamodel.read.read_models import get_models
 
-from nowcasting_metrics.metrics.utils import default_national_models
+use_pvnet_gsp_sum = os.getenv("USE_PVNET_GSP_SUM", "False").lower() == "true"
 
 from sqlalchemy import select
 
@@ -64,18 +67,27 @@ def get_forecast_values(session: Session, model_name: str) -> pd.DataFrame:
     return forecast_values_df
 
 
-def get_all_forecast_values(session: Session) -> dict:
+def get_all_forecast_values(session: Session, forecast_created_utc: Optional[datetime] = None) -> dict:
     """
     Get all forecast values for the last seven days for a given model name.
 
     :param session: database session
+    :param forecast_created_utc: the datetime to filter forecasts by
     :return: dictionary of dataframes for each model
     """
     logger.info(f"Getting forecast values from the database")
     logger.debug("getting forecast ids")
 
-    # get all models
-    models = default_national_models
+    # this gets all the models used in the last week
+    models = get_models(
+        session=session,
+        with_forecasts=True,
+        forecast_created_utc=forecast_created_utc,
+    )
+    models = [model.name for model in models]
+
+    if use_pvnet_gsp_sum and "pvnet_gsp_sum" not in models:
+        models.append("pvnet_gsp_sum")
 
     # get all forecast values
     forecast_values = {}

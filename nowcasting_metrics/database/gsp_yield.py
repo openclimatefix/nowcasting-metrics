@@ -4,23 +4,28 @@ import logging
 import pandas as pd
 
 from nowcasting_datamodel.models.gsp import LocationSQL, GSPYieldSQL
-from nowcasting_datamodel.models.models import MLModelSQL
+from typing import Optional
 
 from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
 
-def get_gsp_yield(session, gsp_id: int) -> pd.DataFrame:
+def get_gsp_yield(session, gsp_id: int, start_datetime: Optional[datetime] = None) -> pd.DataFrame:
     """
     Get all forecast values for the last seven days for a given model name.
 
     :param session: database session
     :param gsp_id: the gsp id
+    :param start_datetime: optional start datetime to filter the yields from
     :return: gsp_yield_df: dataframe of gsp yields with columns
         datetime_utc and solar_generation_kw
     """
     logger.info(f"Getting gsp yields for model {gsp_id} from the database")
+
+    if start_datetime is None:
+        start_datetime = datetime.now() - timedelta(days=8)
+
     logger.debug("getting location ids")
     query = session.query(LocationSQL.id)
     query = query.where(LocationSQL.gsp_id == gsp_id)
@@ -35,7 +40,7 @@ def get_gsp_yield(session, gsp_id: int) -> pd.DataFrame:
 
     # filter forecast is
     query = query.filter(GSPYieldSQL.location_id.in_(locations_ids))
-    query = query.filter(GSPYieldSQL.datetime_utc >= datetime.now() - timedelta(days=8))
+    query = query.filter(GSPYieldSQL.datetime_utc >= start_datetime)
     query = query.filter(GSPYieldSQL.regime == "day-after")
 
     # order by datetime_utc and created_utc desc

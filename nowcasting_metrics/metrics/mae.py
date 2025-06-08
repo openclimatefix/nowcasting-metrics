@@ -1,21 +1,27 @@
 """ Function to make MAE
 
+1. Calculate the Mean Absolute Error (MAE) for different forecast horizons. This is done for National
+2. Calculate the MAE for PVLive initial and updated estimates.
+3. Calculate the MAE for each GSPs (not national) for latest forecasts
+4. Calculate the MAE for all GSPs (not national) for all forecasts
 
+1. has been optimized by only loading the data once, 2.-4. load the data from the database each time.
 
 """
 import logging
 import os
+from datetime import timezone
 from typing import Optional, Union
 
+import numpy as np
+import pandas as pd
 from nowcasting_datamodel import N_GSP
+from nowcasting_datamodel.models import ForecastValueLatestSQL, ForecastValueSevenDaysSQL, Metric
 from nowcasting_datamodel.models import (
-    ForecastValueLatestSQL,
-    ForecastValueSevenDaysSQL,
-    Metric,
-    ForecastValueSQL,
     MLModelSQL,
 )
-from nowcasting_datamodel.models.gsp import GSPYieldSQL, LocationSQL
+from nowcasting_datamodel.models.gsp import GSPYieldSQL
+from nowcasting_datamodel.models.gsp import LocationSQL
 from nowcasting_datamodel.models.metric import DatetimeInterval
 from nowcasting_datamodel.read.read import get_location
 from nowcasting_datamodel.read.read_models import get_models
@@ -23,13 +29,13 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.sql import func
 
 from nowcasting_metrics.metrics.utils import (
-    default_max_forecast_horizon_minutes,
     default_gsp_models,
     filter_query_on_datetime_interval,
     get_forecast_range,
-    make_forecast_sub_query,
-    make_gsp_sub_query,
     make_pvlive_subquery,
+)
+from nowcasting_metrics.metrics.utils import (
+    default_max_forecast_horizon_minutes,
 )
 from nowcasting_metrics.utils import save_metric_value_to_database
 
@@ -118,63 +124,91 @@ def make_pvlive_mae(
     return value, number_of_data_points
 
 
-def make_mae_one_gsp_with_forecast_horizon(
+def make_mae_values(
     session: Session,
     datetime_interval: DatetimeInterval,
-    gsp_id: int,
-    forecast_horizon_minutes: int,
-    model: Optional[Union[ForecastValueSQL, ForecastValueSevenDaysSQL]] = None,
+    forecast_values: pd.DataFrame,
+    gsp_yields: pd.DataFrame,
     metric: Optional[Metric] = latest_mae,
     model_name: Optional[str] = None,
+    use_adjuster: bool = True,
+    forecast_horizon_minutes: Optional[int] = None
 ) -> (int, int):
     """
-    Calculate the MAE for one GSP for a forecast horizon, and save to database
+    Calculate the MAE for one GSP, and save to database
 
     :param session: database session
-    :param datetime_interval: datetime interbal
-    :param gsp_id: the gsp id
-    :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
-        made 60 minutes before target time
-    :param model: the model to use
+    :param datetime_interval: datetime interval
+    :param use_adjuster: option to use the adjuster or not.
     :param metric: the metric to use
     :param model_name: the model name of the forecast. This is optional.
-    :return: 1. the MAE, 2. the MAE with the adjuster 3. the number of data points
+    :param use_adjuster: option to use the adjuster or not.
+    :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
+    made 60 minutes before target time
+    :return: 1. the MAE, 2. MAE with adjuster, 3. the number of data points
     """
 
     logger.debug(
-        f"Calculating {metric.name} for {gsp_id=} "
-        f"and {forecast_horizon_minutes=} for {model_name=}"
+        f"Calculating MAE for last forecast for {model_name=} for"
+        f"start={datetime_interval.start_datetime_utc} "
+        f"and end-{datetime_interval.end_datetime_utc}"
+        f" and {forecast_horizon_minutes=}"
     )
 
-    if model is None:
-        model = ForecastValueSevenDaysSQL
+    if len(forecast_values) == 0:
+        logger.warning(
+            f"Forecast values are empty for {model_name=}"
+        )
+        return []
 
-    sub_query_gsp = make_gsp_sub_query(datetime_interval, gsp_id, session)
-    sub_query_forecast = make_forecast_sub_query(
-        datetime_interval,
-        forecast_horizon_minutes,
-        gsp_id,
-        session,
-        model=model,
-        model_name=model_name,
-    )
+    start_datetime_utc = datetime_interval.start_datetime_utc.replace(tzinfo=timezone.utc)
+    end_datetime_utc = datetime_interval.end_datetime_utc.replace(tzinfo=timezone.utc)
 
-    # make full query
-    query = make_mae_query(session, model=model)
+    gsp_yields = gsp_yields[gsp_yields.index >= start_datetime_utc]
+    gsp_yields = gsp_yields[gsp_yields.index <= end_datetime_utc]
 
-    query = query.filter(model.uuid.in_(sub_query_forecast))
-    query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
-    query = query.filter(GSPYieldSQL.datetime_utc == model.target_time)
-    results = query.all()
+    forecast_values = forecast_values.copy()
+    forecast_values = forecast_values[forecast_values.index >= start_datetime_utc]
+    forecast_values = forecast_values[forecast_values.index <= end_datetime_utc]
+    if forecast_horizon_minutes is not None:
+        forecast_values = forecast_values[
+            forecast_values.index
+            > forecast_values.created_utc + pd.Timedelta(minutes=forecast_horizon_minutes)
+            ]
 
-    number_of_data_points = results[0][2]
-    value = results[0][0]
-    value_adjuster = results[0][1]
+    # take first forecast value for each index, this is becasue they are order by created_utc descing.
+    # this means we get the latest forecast for a given forecast_horizon_minutes
+    forecast_values = forecast_values.groupby(forecast_values.index).first()
+    forecast_values = forecast_values.join(gsp_yields, how="inner", rsuffix="_forecast")
 
-    logger.debug(
-        f"Found MAE of {value} from {number_of_data_points} ({value_adjuster} with adjuster) "
-        f"data points for forecast horizon {forecast_horizon_minutes} for {gsp_id=}."
-    )
+    # calculate the MAE
+    forecast_values["error"] = (
+            forecast_values.expected_power_generation_megawatts
+            - forecast_values.solar_generation_kw / 1000
+    ).abs()
+
+    # calculate the MAE
+    forecast_values["error_adjuster"] = (
+            forecast_values.expected_power_generation_megawatts
+            - forecast_values.adjust_mw
+            - forecast_values.solar_generation_kw / 1000
+    ).abs()
+
+    value = float(forecast_values["error"].mean())
+    value_adjuster = float(forecast_values["error_adjuster"].mean())
+    number_of_data_points = int(forecast_values["error"].count())
+    if np.isnan(value):
+        value = None
+    if np.isnan(value_adjuster):
+        value_adjuster = None
+
+    logger.info(value)
+    logger.info(f"value_adjuster: {value_adjuster}")
+    logger.info(f"number_of_data_points: {number_of_data_points}")
+
+    logger.debug(f"Found MAE of {value} from {number_of_data_points} data points.")
+
+    location = get_location(gsp_id=0, session=session)
 
     save_metric_value_to_database(
         session=session,
@@ -182,24 +216,24 @@ def make_mae_one_gsp_with_forecast_horizon(
         number_of_data_points=number_of_data_points,
         datetime_interval=datetime_interval,
         metric=metric,
-        location=get_location(gsp_id=gsp_id, session=session),
-        forecast_horizon_minutes=forecast_horizon_minutes,
+        location=location,
         model_name=model_name,
+        forecast_horizon_minutes=forecast_horizon_minutes
     )
 
-    save_metric_value_to_database(
-        session=session,
-        value=value_adjuster,
-        number_of_data_points=number_of_data_points,
-        datetime_interval=datetime_interval,
-        metric=latest_mae_with_adjuster,
-        location=get_location(gsp_id=gsp_id, session=session),
-        forecast_horizon_minutes=forecast_horizon_minutes,
-        model_name=model_name,
-    )
+    if use_adjuster:
+        save_metric_value_to_database(
+            session=session,
+            value=value_adjuster,
+            number_of_data_points=number_of_data_points,
+            datetime_interval=datetime_interval,
+            metric=latest_mae_with_adjuster,
+            location=location,
+            model_name=model_name,
+            forecast_horizon_minutes=forecast_horizon_minutes
+        )
 
     return value, value_adjuster, number_of_data_points
-
 
 def make_mae_one_gsp(
     session: Session,
@@ -370,6 +404,8 @@ def make_mae_query(
 def make_mae(
     session: Session,
     datetime_interval: DatetimeInterval,
+    all_forecast_values: dict,
+    gsp_yields: pd.DataFrame,
     n_gsps: Optional[int] = N_GSP,
     max_forecast_horizon_minutes: Optional[dict] = None,
 ):
@@ -401,28 +437,36 @@ def make_mae(
         if model not in max_forecast_horizon_minutes:
             max_forecast_horizon_minutes[model] = 480
 
-    # national
+    # 1. Calculate the MAE for the forecast values for each model
     for model_name in models:
-        make_mae_one_gsp(
-            session=session, datetime_interval=datetime_interval, gsp_id=0, model_name=model_name
-        )
+
+        if model_name not in all_forecast_values:
+            logger.warning(f"No forecast values for model {model_name} for me, skipping...")
+            continue
+
+        forecast_values_df = all_forecast_values[model_name]
 
         # loop over forecast horizons
-        for forecast_horizon_minutes in get_forecast_range(max_forecast_horizon_minutes[model_name]):
-            make_mae_one_gsp_with_forecast_horizon(
+        for forecast_horizon_minutes in [None] + list(get_forecast_range(max_forecast_horizon_minutes[model_name])):
+            make_mae_values(
                 session=session,
                 datetime_interval=datetime_interval,
-                gsp_id=0,
                 forecast_horizon_minutes=forecast_horizon_minutes,
                 model_name=model_name,
+                forecast_values=forecast_values_df,
+                gsp_yields=gsp_yields
             )
 
-    # pvlive
+
+    # Below are metrics made by querying the database directly, rather than using forecast values
+    # This can be a improvement in the future
+
+    # 2. pvlive
     for gps_id in range(0, n_gsps + 1):
         make_pvlive_mae(session=session, datetime_interval=datetime_interval, gsp_id=gps_id)
 
-    # all gsps
     for model_name in default_gsp_models:
+        # 3. for ecah gsps
         for gps_id in range(1, n_gsps + 1):
             make_mae_one_gsp(
                 session=session,
@@ -432,6 +476,7 @@ def make_mae(
                 use_adjuster=False,
             )
 
+        # 4. all gsps (not national)
         make_mae_all_gsp(
             session=session, datetime_interval=datetime_interval, model_name=model_name
         )

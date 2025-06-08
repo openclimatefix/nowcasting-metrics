@@ -4,6 +4,7 @@ from nowcasting_datamodel.models.gsp import GSPYieldSQL
 from nowcasting_datamodel.models.metric import MetricSQL, MetricValueSQL
 
 from nowcasting_metrics.metrics.me import me_hh
+from nowcasting_metrics.metrics.mae import latest_mae
 from nowcasting_metrics.app import app
 
 from freezegun import freeze_time
@@ -49,6 +50,17 @@ def test_app(
         db_session.query(MetricValueSQL).join(MetricSQL).filter(MetricSQL.name == me_hh.name).all()
     )
     assert len(metric_values) == 48
+
+    # check mae results
+    # 3 models with None + 8 forecast horizons = 27
+    # 2 models at gsp level from 1-5 = 10
+    # total is 93
+    metric_values = (
+        db_session.query(MetricValueSQL).join(MetricSQL).filter(MetricSQL.name == latest_mae.name).all()
+    )
+    for mv in metric_values:
+        print(f"{mv.model_id} {mv.location_id} {mv.forecast_horizon_minutes} {mv.value}")
+    assert len(metric_values) == 37
 
     # check all metrics
     metric_values = db_session.query(MetricValueSQL).all()

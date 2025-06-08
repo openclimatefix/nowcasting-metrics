@@ -112,11 +112,21 @@ def app(
         )
         logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
+
         try:
             # Check if RUN_METRICS is enabled (default: true). If true, run standard forecast evaluation metrics
             if run_metrics:
+
+                # get datee
+                all_forecast_values = get_all_forecast_values(session=session, forecast_created_utc=start_datetime)
+                gsp_yields_df = get_gsp_yield(session=session, gsp_id=0, start_datetime=start_datetime)
+
                 # run daily MAE
-                make_mae(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
+                make_mae(session=session,
+                         datetime_interval=datetime_interval,
+                         n_gsps=n_gsps,
+                         all_forecast_values=all_forecast_values,
+                         gsp_yields=gsp_yields_df)
 
                 # run daily RMSE
                 # make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
@@ -138,11 +148,10 @@ def app(
                 )
                 logger.debug(f"Will be running metrics for {start_datetime} to {end_datetime}")
 
-                # getting half hour metrics
-
                 all_forecast_values = get_all_forecast_values(session=session)
                 gsp_yields_df = get_gsp_yield(session=session, gsp_id=0)
 
+                # getting half hour metrics
                 make_me(session=session, datetime_interval=datetime_interval,all_forecast_values=all_forecast_values, gsp_yields=gsp_yields_df)
 
             # save values to database
