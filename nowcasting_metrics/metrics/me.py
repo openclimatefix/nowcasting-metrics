@@ -189,6 +189,10 @@ def make_me(
                 model_name
             ]
 
+        if model_name not in all_forecast_values:
+            logger.warning(f"No forecast values for model {model_name} for me, skipping...")
+            continue
+
         forecast_values_df = all_forecast_values[model_name]
 
         for forecast_horizon_minutes in range(0, max_forecast_horizon_minutes[model_name], 30):
