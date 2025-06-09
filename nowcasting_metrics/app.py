@@ -117,7 +117,7 @@ def app(
             # Check if RUN_METRICS is enabled (default: true). If true, run standard forecast evaluation metrics
             if run_metrics:
 
-                # get datee
+                # get data
                 all_forecast_values = get_all_forecast_values(session=session, forecast_created_utc=start_datetime)
                 gsp_yields_df = get_gsp_yield(session=session, gsp_id=0, start_datetime=start_datetime)
 
