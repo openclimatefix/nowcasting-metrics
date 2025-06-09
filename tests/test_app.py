@@ -65,7 +65,7 @@ def test_app(
 
     # check all metrics
     metric_values = db_session.query(MetricValueSQL).all()
-    assert len(metric_values) == 144
+    assert len(metric_values) == 150
     # National
     # - with and without adjuster = 2
     # - 8 forecast horizons with and without adjuster = 16
@@ -77,11 +77,11 @@ def test_app(
     # Total metrics 48
     # RMSE has been removed
     # + ME # 2 models * 8 forecast horizons * 2 half hours  = 32
-    # + Ramp rate 3 models * 3 forecast horizons  = 9 # TODO this is 0 right now
-    # Total is 80
+    # + Ramp rate 2 models * 3 forecast horizons  = 6
+    # Total is 86
     # Pinball 2 models * 8 forecast horizons* 2 p levels  = 32
     # Exceedance 2 models * 8 forecast horizons * 2 p levels  = 32
-    # Total 144
+    # Total 150
 
     metrics = db_session.query(MetricSQL).all()
     assert len(metrics) == 12

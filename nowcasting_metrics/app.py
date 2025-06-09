@@ -132,12 +132,16 @@ def app(
                 # make_rmse(session=session, datetime_interval=datetime_interval, n_gsps=n_gsps)
 
                 # run ramp rate
-                make_ramp_rate(session=session, datetime_interval=datetime_interval)
+                make_ramp_rate(session=session,
+                               datetime_interval=datetime_interval,
+                               all_forecast_values=all_forecast_values,
+                               gsp_yields=gsp_yields_df)
 
                 # run probabilistic metrics
-                make_probabilistic(session=session, datetime_interval=datetime_interval,
+                make_probabilistic(session=session,
+                                   datetime_interval=datetime_interval,
                                    all_forecast_values=all_forecast_values,
-                         gsp_yields=gsp_yields_df)
+                                   gsp_yields=gsp_yields_df)
 
             # Check if RUN_ME is enabled (default: true). If true, compute the Mean Error (ME) metric separately
             if run_me:
