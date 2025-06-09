@@ -6,7 +6,7 @@ from nowcasting_metrics.metrics.mae import (
     make_pvlive_mae,
 )
 from nowcasting_metrics.database.gsp_yield import get_gsp_yield
-from nowcasting_metrics.database.forecast import get_forecast_values, get_all_forecast_values
+from nowcasting_metrics.database.forecast import get_all_forecast_values
 
 from freezegun import freeze_time
 

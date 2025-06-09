@@ -9,26 +9,22 @@
 
  """
 
+from datetime import timezone
 import logging
+import pandas as pd
+import numpy as np
 from typing import Optional, Dict
 from nowcasting_datamodel.models import (
-    ForecastValueSevenDaysSQL,
     DatetimeInterval,
-    GSPYieldSQL,
     Metric,
 )
 from nowcasting_datamodel.read.read import get_location
-from sqlalchemy import text
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql import func
-from sqlalchemy import Float
 
 from nowcasting_metrics.metrics.utils import (
     default_max_forecast_horizon_minutes,
     default_probabilistic_models,
     get_forecast_range,
-    make_gsp_sub_query,
-    make_forecast_sub_query,
 )
 from nowcasting_metrics.utils import save_metric_value_to_database
 
@@ -51,6 +47,8 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
     datetime_interval: DatetimeInterval,
     forecast_horizon_minutes: int,
     p_level: str,
+    forecast_values: pd.DataFrame,
+    gsp_yields: pd.DataFrame,
 ):
     """Make probabilistic metrics for one forecast horizon minutes
 
@@ -67,75 +65,82 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
         f"for {model_name=}, {forecast_horizon_minutes=}, {p_level=}"
     )
 
+    if len(forecast_values) == 0:
+        logger.warning(
+            f"Forecast values are empty for {model_name=}, "
+            f"so cannot make pinball and exceedance metrics. "
+        )
+        return []
+
     # get a valye between 0 and 1
     tau = float(p_level) / 100
 
-    # get truth and prediction sub queries
-    sub_query_gsp = make_gsp_sub_query(
-        datetime_interval=datetime_interval, gsp_id=0, session=session
-    )
-    sub_query_forecast = make_forecast_sub_query(
-        datetime_interval=datetime_interval,
-        forecast_horizon_minutes=forecast_horizon_minutes,
-        gsp_id=0,
-        session=session,
-        model=ForecastValueSevenDaysSQL,
-        model_name=model_name,
+    start_datetime_utc = datetime_interval.start_datetime_utc.replace(tzinfo=timezone.utc)
+    end_datetime_utc = datetime_interval.end_datetime_utc.replace(tzinfo=timezone.utc)
+
+    gsp_yields = gsp_yields[gsp_yields.index >= start_datetime_utc]
+    gsp_yields = gsp_yields[gsp_yields.index <= end_datetime_utc]
+
+    forecast_values = forecast_values.copy()
+    forecast_values = forecast_values[forecast_values.index >= start_datetime_utc]
+    forecast_values = forecast_values[forecast_values.index <= end_datetime_utc]
+
+    # filter for forecast horizon
+    if forecast_horizon_minutes is not None:
+        forecast_values = forecast_values[
+            forecast_values.index
+            > forecast_values.created_utc + pd.Timedelta(minutes=forecast_horizon_minutes)
+            ]
+
+    if len(forecast_values) == 0:
+        logger.warning(
+            f"Forecast values are empty for {model_name=} {forecast_horizon_minutes=}, "
+            f"so cannot make pinball and exceedance metrics. "
+        )
+        return []
+
+    # take first forecast value for each index, this is becasue they are order by created_utc descing.
+    # this means we get the latest forecast for a given forecast_horizon_minutes
+    forecast_values = forecast_values.groupby(forecast_values.index).first()
+    forecast_values = forecast_values.join(gsp_yields, how="inner", rsuffix="_forecast")
+
+    # change json column 'properties' to seperate columns
+    forecast_values = forecast_values.copy()
+    forecast_values = forecast_values.join(
+        forecast_values.properties.apply(pd.Series),
+        rsuffix="_properties",
     )
 
-    # join truth and predictions together
-    query = session.query(
-        func.count(),
-    )
-    query = query.filter(ForecastValueSevenDaysSQL.uuid.in_(sub_query_forecast))
-    query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
+    forecast_values_under = forecast_values[
+            forecast_values[p_level]
+            <forecast_values.solar_generation_kw / 1000
+    ]
+    forecast_values_over = forecast_values[
+            forecast_values[p_level]
+            > forecast_values.solar_generation_kw / 1000
+    ]
+    under_average =  (forecast_values_under.solar_generation_kw / 1000 - forecast_values_under[p_level]).mean()
+    over_average = (forecast_values_over[p_level] - forecast_values_over.solar_generation_kw / 1000).mean()
 
-    results_count = query.all()
+    if np.isnan(under_average):
+        under_average = 0
+    if np.isnan(over_average):
+        over_average = 0
 
-    # get the number of times the prediction is over the p level
-    query = session.query(
-        func.avg(
-            ForecastValueSevenDaysSQL.properties[p_level].as_float()
-            - GSPYieldSQL.solar_generation_kw / 1000
-        ),
-        func.count(),
-    )
-    query = query.filter(ForecastValueSevenDaysSQL.uuid.in_(sub_query_forecast))
-    query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
-    query = query.filter(
-        ForecastValueSevenDaysSQL.properties[p_level].as_float()
-        >= GSPYieldSQL.solar_generation_kw / 1000
-    )
-    results_over = query.all()
+    number_of_data_points = len(forecast_values)
+    number_of_data_points_under = len(forecast_values_under)
+    number_of_data_points_over = len(forecast_values_over)
 
-    # get the number of times the prediction is under the p level
-    query = session.query(
-        func.avg(
-            GSPYieldSQL.solar_generation_kw / 1000
-            - ForecastValueSevenDaysSQL.properties[p_level].as_float()
-        ),
-        func.count(),
-    )
-    query = query.filter(ForecastValueSevenDaysSQL.uuid.in_(sub_query_forecast))
-    query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
-    query = query.filter(
-        ForecastValueSevenDaysSQL.properties[p_level].as_float()
-        <= GSPYieldSQL.solar_generation_kw / 1000
-    )
-    results_under = query.all()
-
-    number_of_data_points = results_count[0][0]
+    fraction_under = number_of_data_points_under / number_of_data_points
+    fraction_over = number_of_data_points_over / number_of_data_points
 
     # if there are no values under, then `results_under' is None, hence we need to check
     # similar fo values over
     pinball_value = 0
-    if results_under[0][0] is not None:
-        pinball_value += (results_under[0][0] * results_under[0][1]) * (1 - tau)
-    if results_over[0][0] is not None:
-        pinball_value += (results_over[0][0] * results_over[0][1]) * tau
+    if number_of_data_points_under is not None:
+        pinball_value += (number_of_data_points_under * under_average) * (1 - tau)
+    if number_of_data_points_over is not None:
+        pinball_value += (number_of_data_points_over * over_average) * tau
 
     # divide by the number of data points to get average
     if number_of_data_points == 0:
@@ -147,11 +152,19 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
         # to take account for night where the truth and prediction are both 0
         # for plevels above 50, we want to include these,
         # for plevels below 50, we want to exclude these
-        # both results_under and results_over include these night time values
+        # both results_under and results_over include these nighttime values
         if tau < 0.5:
-            exceedance_value = 1 - (results_under[0][1] / number_of_data_points)
+            exceedance_value = 1 - fraction_under
         else:
-            exceedance_value = results_over[0][1] / number_of_data_points
+            exceedance_value = fraction_over
+
+        exceedance_value = float(exceedance_value)
+        pinball_value = float(pinball_value)
+
+    if np.isnan(exceedance_value):
+        exceedance_value = None
+    if np.isnan(pinball_value):
+        pinball_value = None
 
     logger.debug(f"pinball: {pinball_value}")
     logger.debug(f"exceedance_value: {exceedance_value}")
@@ -188,6 +201,8 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
 def make_probabilistic(
     session: Session,
     datetime_interval: DatetimeInterval,
+    all_forecast_values: dict,
+    gsp_yields: pd.DataFrame,
     max_forecast_horizon_minutes: Optional[Dict[str, int]] = None,
 ):
     """
@@ -203,7 +218,15 @@ def make_probabilistic(
         max_forecast_horizon_minutes = default_max_forecast_horizon_minutes
 
     for model_name in default_probabilistic_models:
+
+        if model_name not in all_forecast_values:
+            logger.warning(f"No forecast values for model {model_name} for pinball and exceedance, skipping...")
+            continue
+
         for forecast_horizon_minute in get_forecast_range(max_forecast_horizon_minutes[model_name]):
+
+            forecast_values_df = all_forecast_values[model_name]
+
             for p_level in ["10", "90"]:
 
                 make_probabilistic_metrics_one_forecast_horizon_minutes(
@@ -212,4 +235,6 @@ def make_probabilistic(
                     datetime_interval=datetime_interval,
                     forecast_horizon_minutes=forecast_horizon_minute,
                     p_level=p_level,
+                    forecast_values=forecast_values_df,
+                    gsp_yields=gsp_yields,
                 )

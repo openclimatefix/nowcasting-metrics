@@ -47,6 +47,7 @@ def get_forecast_values(session: Session, model_name: str) -> pd.DataFrame:
         ForecastValueSevenDaysSQL.expected_power_generation_megawatts,
         ForecastValueSevenDaysSQL.adjust_mw,
         ForecastValueSevenDaysSQL.created_utc,
+        ForecastValueSevenDaysSQL.properties,
     )
 
     # filter forecast is

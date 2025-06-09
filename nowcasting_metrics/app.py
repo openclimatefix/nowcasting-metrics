@@ -135,7 +135,9 @@ def app(
                 make_ramp_rate(session=session, datetime_interval=datetime_interval)
 
                 # run probabilistic metrics
-                make_probabilistic(session=session, datetime_interval=datetime_interval)
+                make_probabilistic(session=session, datetime_interval=datetime_interval,
+                                   all_forecast_values=all_forecast_values,
+                         gsp_yields=gsp_yields_df)
 
             # Check if RUN_ME is enabled (default: true). If true, compute the Mean Error (ME) metric separately
             if run_me:
