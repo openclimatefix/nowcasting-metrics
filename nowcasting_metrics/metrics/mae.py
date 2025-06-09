@@ -159,7 +159,7 @@ def make_mae_values(
         logger.warning(
             f"Forecast values are empty for {model_name=}"
         )
-        return []
+        return ()
 
     start_datetime_utc = datetime_interval.start_datetime_utc.replace(tzinfo=timezone.utc)
     end_datetime_utc = datetime_interval.end_datetime_utc.replace(tzinfo=timezone.utc)
@@ -447,6 +447,7 @@ def make_mae(
         forecast_values_df = all_forecast_values[model_name]
 
         # loop over forecast horizons
+        # we want to run the MAE for no forecast horizon as well as each forecast horizon
         for forecast_horizon_minutes in [None] + list(get_forecast_range(max_forecast_horizon_minutes[model_name])):
             make_mae_values(
                 session=session,

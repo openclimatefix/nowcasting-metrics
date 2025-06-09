@@ -42,7 +42,8 @@ def test_app(
     response = runner.invoke(
         app, ["--db-url", db_connection.url, "--n-gsps", 5, "--datetime-now", "2022-01-02"]
     )
-    assert response.exit_code == 0, response.exception
+    if not response.exit_code == 0:
+        raise response.exception
 
     # check me results
     # 3 models, 2 forecast horizon, 8 half hours

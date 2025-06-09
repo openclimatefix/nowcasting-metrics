@@ -117,7 +117,7 @@ def app(
             # Check if RUN_METRICS is enabled (default: true). If true, run standard forecast evaluation metrics
             if run_metrics:
 
-                # get datee
+                # get data
                 all_forecast_values = get_all_forecast_values(session=session, forecast_created_utc=start_datetime)
                 gsp_yields_df = get_gsp_yield(session=session, gsp_id=0, start_datetime=start_datetime)
 
@@ -135,7 +135,9 @@ def app(
                 make_ramp_rate(session=session, datetime_interval=datetime_interval)
 
                 # run probabilistic metrics
-                make_probabilistic(session=session, datetime_interval=datetime_interval)
+                make_probabilistic(session=session, datetime_interval=datetime_interval,
+                                   all_forecast_values=all_forecast_values,
+                         gsp_yields=gsp_yields_df)
 
             # Check if RUN_ME is enabled (default: true). If true, compute the Mean Error (ME) metric separately
             if run_me:
