@@ -12,7 +12,7 @@ from freezegun import freeze_time
 
 
 def test_make_mae(db_session, gsp_yields, forecast_values_latest, datetime_interval):
-    value, value_adjuster, n = make_mae_one_gsp(session=db_session, datetime_interval=datetime_interval, gsp_id=1, model_name="cnn")
+    value, value_adjuster, n = make_mae_one_gsp(session=db_session, datetime_interval=datetime_interval, gsp_id=1, model_name="pvnet_v2")
 
     assert value == 1.5  # (1-1)*0.5 + (4-1)*0.5
     assert n == 2
@@ -44,7 +44,7 @@ def test_make_mae_forecast_horizon(db_session, gsp_yields, forecast_values, date
 def test_make_mae_all_gsp(
     db_session, gsp_yields, forecast_values_latest, forecast_values, datetime_interval
 ):
-    value, n = make_mae_all_gsp(session=db_session, datetime_interval=datetime_interval, model_name="cnn")
+    value, n = make_mae_all_gsp(session=db_session, datetime_interval=datetime_interval, model_name="pvnet_v2")
 
     assert value == 1.5  # (1-1)*0.5 + (4-1)*0.5
     assert n == 10  # 2 *5
@@ -60,7 +60,7 @@ def test_make_mae_five_gsp(
         session=db_session,
         datetime_interval=datetime_interval,
         n_gsps=5,
-        max_forecast_horizon_minutes={"cnn": 240, "National_xg": 240, "pvnet_v2": 240},
+        max_forecast_horizon_minutes={"National_xg": 240, "pvnet_v2": 240},
         all_forecast_values=forecast_values,
         gsp_yields=gsp_yields_df
     )

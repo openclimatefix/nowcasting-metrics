@@ -46,43 +46,42 @@ def test_app(
         raise response.exception
 
     # check me results
-    # 3 models, 2 forecast horizon, 8 half hours
+    # 2 models, 2 forecast horizon, 8 half hours
     metric_values = (
         db_session.query(MetricValueSQL).join(MetricSQL).filter(MetricSQL.name == me_hh.name).all()
     )
-    assert len(metric_values) == 48
+    assert len(metric_values) == 32
 
     # check mae results
-    # 3 models with None + 8 forecast horizons = 27
-    # 2 models at gsp level from 1-5 = 10
-    # total is 93
+    # 2 models with None + 8 forecast horizons = 18
+    # 1 models at gsp level from 1-5 = 10
+    # total is 23
     metric_values = (
         db_session.query(MetricValueSQL).join(MetricSQL).filter(MetricSQL.name == latest_mae.name).all()
     )
     for mv in metric_values:
         print(f"{mv.model_id} {mv.location_id} {mv.forecast_horizon_minutes} {mv.value}")
-    assert len(metric_values) == 37
+    assert len(metric_values) == 23
 
     # check all metrics
     metric_values = db_session.query(MetricValueSQL).all()
-    assert len(metric_values) == 184
+    assert len(metric_values) == 144
     # National
     # - with and without adjuster = 2
     # - 8 forecast horizons with and without adjuster = 16
-    # - 3 models
-    # - Total is 18*3 = 54
+    # - 2 models
+    # - Total is 18*3 = 36
     # GSP
     # - 5*GSPs + All GSPS = 6
-    # - x2 models = 12
     # GPS PVlive = 6
-    # Total metrics 72
+    # Total metrics 48
     # RMSE has been removed
-    # + ME # 3 models * 8 forecast horizons * 2 half hours  = 48
+    # + ME # 2 models * 8 forecast horizons * 2 half hours  = 32
     # + Ramp rate 3 models * 3 forecast horizons  = 9 # TODO this is 0 right now
-    # Total is 120
+    # Total is 80
     # Pinball 2 models * 8 forecast horizons* 2 p levels  = 32
     # Exceedance 2 models * 8 forecast horizons * 2 p levels  = 32
-    # Total 184
+    # Total 144
 
     metrics = db_session.query(MetricSQL).all()
     assert len(metrics) == 12
