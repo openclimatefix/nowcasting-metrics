@@ -10,7 +10,7 @@ def test_make_ramp_rate_one_forecast_horizon(
     value, n = make_ramp_rate_one_forecast_horizon_minutes(
         session=db_session,
         datetime_interval=datetime_interval,
-        model_name="cnn",
+        model_name="pvnet_v2",
         forecast_horizon_minutes=0,
         ramp_rate_minutes=30,
     )

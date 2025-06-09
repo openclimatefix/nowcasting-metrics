@@ -45,7 +45,7 @@ def forecast_values_latest(db_session):
     dt2 = datetime(2022, 1, 1, 1)
 
 
-    for model_name in ["cnn", "National_xg", "pvnet_v2"]:
+    for model_name in ["National_xg", "pvnet_v2"]:
         model = get_model(name=model_name, session=db_session, version='0.0.1')
 
         for gsp_id in range(0, 6):
@@ -64,7 +64,7 @@ def forecast_values(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
-    for model_name in ["cnn", "National_xg", "pvnet_v2"]:
+    for model_name in ["National_xg", "pvnet_v2"]:
         model = get_model(name=model_name, session=db_session, version='0.0.1')
 
         for gsp_id in range(0, 6):
@@ -102,7 +102,7 @@ def forecast_values_same_creation(db_session):
     dt1 = datetime(2022, 1, 1, 0, 30)
     dt2 = datetime(2022, 1, 1, 1)
 
-    for model_name in ["cnn", "National_xg", "pvnet_v2"]:
+    for model_name in ["National_xg", "pvnet_v2"]:
         model = get_model(name=model_name, session=db_session, version='0.0.1')
 
         for gsp_id in range(0, 6):

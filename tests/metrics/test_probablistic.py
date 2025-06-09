@@ -18,7 +18,7 @@ def test_make_prob_one_forecast_horizon(
     value, pinball, n = make_probabilistic_metrics_one_forecast_horizon_minutes(
         session=db_session,
         datetime_interval=datetime_interval,
-        model_name="cnn",
+        model_name="pvnet_v2",
         forecast_horizon_minutes=0,
         p_level='10',
         forecast_values=forecast_values,
@@ -32,7 +32,7 @@ def test_make_prob_one_forecast_horizon(
     value, pinball, n = make_probabilistic_metrics_one_forecast_horizon_minutes(
         session=db_session,
         datetime_interval=datetime_interval,
-        model_name="cnn",
+        model_name="pvnet_v2",
         forecast_horizon_minutes=0,
         p_level='90',
         forecast_values = forecast_values,
