@@ -2,6 +2,7 @@ import logging
 from datetime import timezone
 
 import pandas as pd
+import numpy as np
 from nowcasting_datamodel.models import (
     DatetimeInterval,
     Metric,
@@ -86,8 +87,11 @@ def make_ramp_rate_one_forecast_horizon_minutes(
             + forecast_values.solar_generation_kw_ramp / 1000
     ).abs()
 
-    value = forecast_values["ramp_rate"].mean()
+    value = float(forecast_values["ramp_rate"].mean())
     number_of_data_points = len(forecast_values)
+
+    if np.isnan(value):
+        value = None
 
     logger.debug(
         f"Found Ramp Rate of {value} from {number_of_data_points} data points"
