@@ -40,7 +40,7 @@ def get_forecast_values(session: Session, model_name: str) -> pd.DataFrame:
 
     forecasts_ids = query.all()
     forecasts_ids = [m.id for m in forecasts_ids]
-    logger.debug("got forecast ids")
+    logger.debug(f"got forecast ids, ({len(forecasts_ids)})")
 
     query = select(
         ForecastValueSevenDaysSQL.target_time,
@@ -62,7 +62,7 @@ def get_forecast_values(session: Session, model_name: str) -> pd.DataFrame:
         query, session.bind, index_col="target_time", parse_dates=["target_time", "created_utc"]
     )
     logger.debug(
-        f"got forecast values, last seven day table, found {len(forecast_values_df)} forecasts"
+        f"got forecast values, last seven day table, found {len(forecast_values_df)} forecast values"
     )
 
     return forecast_values_df

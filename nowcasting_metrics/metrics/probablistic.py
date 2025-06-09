@@ -104,6 +104,13 @@ def make_probabilistic_metrics_one_forecast_horizon_minutes(
     forecast_values = forecast_values.groupby(forecast_values.index).first()
     forecast_values = forecast_values.join(gsp_yields, how="inner", rsuffix="_forecast")
 
+    if len(forecast_values) == 0:
+        logger.warning(
+            f"No overlapping forecast valyes and gsp yields for {model_name=} {forecast_horizon_minutes=}, "
+            f"so cannot make pinball and exceedance metrics. "
+        )
+        return []
+
     # change json column 'properties' to seperate columns
     forecast_values = forecast_values.copy()
     forecast_values = forecast_values.join(
