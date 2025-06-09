@@ -13,7 +13,6 @@ from sqlalchemy.orm.session import Session
 
 
 default_max_forecast_horizon_minutes = {
-    "cnn": 480,
     "National_xg": 40 * 60,
     "pvnet_v2": 480,
     "pvnet_day_ahead": 40 * 60,
@@ -21,8 +20,8 @@ default_max_forecast_horizon_minutes = {
     "neso-solar-forecast": 24*60*4 # 4 days
 }
 
-default_gsp_models = ["cnn", "pvnet_v2", "pvnet_day_ahead"]
-default_national_models = ["cnn", "pvnet_v2", "National_xg", "pvnet_day_ahead", "neso-solar-forecast"]
+default_gsp_models = ["pvnet_v2", "pvnet_day_ahead"]
+default_national_models = ["pvnet_v2", "National_xg", "pvnet_day_ahead", "neso-solar-forecast"]
 default_probabilistic_models = ["pvnet_v2", "National_xg", "pvnet_day_ahead"]
 
 

@@ -34,7 +34,7 @@ def test_make_me_forecast_horizon(db_session, gsp_yields, forecast_values, datet
 def test_make_me(
     db_session, gsp_yields, forecast_values_latest, forecast_values, datetime_interval
 ):
-    max_forecast_horizon_minutes = {"cnn": 240, "National_xg": 30 * 60, "pvnet_v2": 240}
+    max_forecast_horizon_minutes = {"National_xg": 30 * 60, "pvnet_v2": 240}
 
     db_session.commit()
     forecast_values = get_all_forecast_values(session=db_session)
@@ -49,4 +49,4 @@ def test_make_me(
     )
 
     # 3 models, 2 forecast horizon, 8 half hours
-    assert db_session.query(MetricValueSQL).count() == 3 * 2 * 8
+    assert db_session.query(MetricValueSQL).count() == 2 * 2 * 8
