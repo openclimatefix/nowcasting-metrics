@@ -77,7 +77,7 @@ def test_app(
     # RMSE has been removed
     # + ME # 2 models * 8 forecast horizons * 2 half hours  = 32
     # + Ramp rate 2 models * 3 forecast horizons  = 6 # TODO, not working
-    # Total is 86
+    # Total is 80
     # Pinball 2 models * 8 forecast horizons* 2 p levels  = 32
     # Exceedance 2 models * 8 forecast horizons * 2 p levels  = 32
     # Total 144
