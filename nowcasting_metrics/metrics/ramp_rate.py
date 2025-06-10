@@ -1,16 +1,16 @@
 import logging
+from datetime import timezone
+
+import pandas as pd
+import numpy as np
 from nowcasting_datamodel.models import (
-    ForecastValueSevenDaysSQL,
     DatetimeInterval,
-    GSPYieldSQL,
     Metric,
 )
 from nowcasting_datamodel.read.read import get_location
-from sqlalchemy import text
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql import func
 
-from nowcasting_metrics.metrics.utils import default_national_models, make_gsp_sub_query, make_forecast_sub_query
+from nowcasting_metrics.metrics.utils import default_national_models
 from nowcasting_metrics.utils import save_metric_value_to_database
 
 logger = logging.getLogger(__name__)
@@ -24,89 +24,74 @@ ramp_rate = Metric(
 )
 
 
-def make_forecast_value_query(
-    session,
-    sub_query_name: str,
-    model_name: str,
-    datetime_interval: DatetimeInterval,
-    forecast_horizon_minutes: int,
-):
-    """Make a query to get the forecast values and the true values from the database"""
-    # get truth and prediction sub queries
-    sub_query_gsp = make_gsp_sub_query(
-        datetime_interval=datetime_interval, gsp_id=0, session=session
-    )
-    sub_query_forecast = make_forecast_sub_query(
-        datetime_interval=datetime_interval,
-        forecast_horizon_minutes=forecast_horizon_minutes,
-        gsp_id=0,
-        session=session,
-        model=ForecastValueSevenDaysSQL,
-        model_name=model_name,
-    )
-
-    # join truth and predictions together
-    query = session.query(
-        ForecastValueSevenDaysSQL.forecast_id.label(f"id_{sub_query_name}"),
-        ForecastValueSevenDaysSQL.target_time.label(f"t_{sub_query_name}"),
-        ForecastValueSevenDaysSQL.expected_power_generation_megawatts.label(
-            f"power_{sub_query_name}"
-        ),
-        GSPYieldSQL.solar_generation_kw.label(f"true_{sub_query_name}"),
-    )
-    query = query.filter(ForecastValueSevenDaysSQL.uuid.in_(sub_query_forecast))
-    query = query.filter(GSPYieldSQL.id.in_(sub_query_gsp))
-    query = query.filter(GSPYieldSQL.datetime_utc == ForecastValueSevenDaysSQL.target_time)
-
-    return query
-
-
 def make_ramp_rate_one_forecast_horizon_minutes(
     session,
     model_name: str,
     datetime_interval: DatetimeInterval,
     forecast_horizon_minutes: int,
     ramp_rate_minutes: int,
+    forecast_values: pd.DataFrame,
+    gsp_yields: pd.DataFrame,
 ):
     """Calculate one ramp rate metric for a given forecast horizon"""
 
-    # get the forecast values with the forecast horizon
-    query_a = make_forecast_value_query(
-        session,
-        "a",
-        model_name,
-        datetime_interval=datetime_interval,
-        forecast_horizon_minutes=forecast_horizon_minutes,
-    ).subquery()
+    start_datetime_utc = datetime_interval.start_datetime_utc.replace(tzinfo=timezone.utc)
+    end_datetime_utc = datetime_interval.end_datetime_utc.replace(tzinfo=timezone.utc)
 
-    # get the forecast values with the forecast horizon + 60 minutes
-    query_b = make_forecast_value_query(
-        session,
-        "b",
-        model_name,
-        datetime_interval=datetime_interval,
-        forecast_horizon_minutes=forecast_horizon_minutes + ramp_rate_minutes,
-    ).subquery()
+    if len(forecast_values) == 0:
+        logger.warning(
+            f"Forecast values are empty for {model_name=}"
+        )
+        return ()
 
-    # # join queries together and get ramp rate
-    query = session.query(
-        func.avg(
-            func.abs(query_b.c.power_b - query_a.c.power_a
-            - (query_b.c.true_b / 1000 - query_a.c.true_a / 1000))
-        ),
-        func.count(),
+    gsp_yields = gsp_yields[gsp_yields.index >= start_datetime_utc]
+    gsp_yields = gsp_yields[gsp_yields.index <= end_datetime_utc]
+
+    forecast_values = forecast_values.copy()
+    forecast_values = forecast_values[forecast_values.index >= start_datetime_utc]
+    forecast_values = forecast_values[forecast_values.index <= end_datetime_utc]
+
+    # using ramp_rate_minutes, lets shift the index back by ramp_rate_minutes, and then join
+    forecast_values_ramp = forecast_values.copy()
+    forecast_values_ramp.index = forecast_values_ramp.index - pd.Timedelta(minutes=ramp_rate_minutes)
+    forecast_values = forecast_values.join(
+        forecast_values_ramp,
+        how="inner",
+        rsuffix="_ramp",
+    )
+    # and lets do the same for gsp_yields
+    gsp_yields_ramp = gsp_yields.copy()
+    gsp_yields_ramp.index = gsp_yields_ramp.index - pd.Timedelta(minutes=ramp_rate_minutes)
+    gsp_yields = gsp_yields.join(
+        gsp_yields_ramp,
+        how="inner",
+        rsuffix="_ramp",
     )
 
-    # join queries together
-    query = query.filter(query_a.c.id_a == query_b.c.id_b)
-    query = query.filter(
-        query_a.c.t_a == query_b.c.t_b - text(f"interval '{ramp_rate_minutes} minute'")
-    )
+    if forecast_horizon_minutes is not None:
+        forecast_values = forecast_values[
+            forecast_values.index
+            > forecast_values.created_utc + pd.Timedelta(minutes=forecast_horizon_minutes)
+            ]
 
-    # get results
-    results = query.all()
-    number_of_data_points = results[0][1]
-    value = results[0][0]
+    # take first forecast value for each index, this is becasue they are order by created_utc descing.
+    # this means we get the latest forecast for a given forecast_horizon_minutes
+    forecast_values = forecast_values.groupby(forecast_values.index).first()
+    forecast_values = forecast_values.join(gsp_yields, how="inner", rsuffix="_forecast")
+
+    # calculate the ramp rate
+    forecast_values["ramp_rate"] = (
+            forecast_values.expected_power_generation_megawatts
+            - forecast_values.expected_power_generation_megawatts_ramp
+            - forecast_values.solar_generation_kw / 1000
+            + forecast_values.solar_generation_kw_ramp / 1000
+    ).abs()
+
+    value = float(forecast_values["ramp_rate"].mean())
+    number_of_data_points = len(forecast_values)
+
+    if np.isnan(value):
+        value = None
 
     logger.debug(
         f"Found Ramp Rate of {value} from {number_of_data_points} data points"
@@ -131,21 +116,34 @@ def make_ramp_rate_one_forecast_horizon_minutes(
 def make_ramp_rate(
     session: Session,
     datetime_interval: DatetimeInterval,
+    all_forecast_values: dict,
+    gsp_yields: pd.DataFrame,
 ):
     """
     Make ramp rate for all models and forecast horizons
 
     :param session: database session
     :param datetime_interval: datetime interval
+    :param all_forecast_values: all forecast values for the last seven days
+    :param gsp_yields: the GSP yields for the last seven days
     :return: None
     """
     forecast_horizon_hours = [0, 1, 2]
     for forecast_horizon_hour in forecast_horizon_hours:
         for model_name in default_national_models:
+
+            if model_name not in all_forecast_values:
+                logger.warning(f"No forecast values for model {model_name} for me, skipping...")
+                continue
+
+            forecast_values_df = all_forecast_values[model_name]
+
             make_ramp_rate_one_forecast_horizon_minutes(
                 session=session,
                 model_name=model_name,
                 datetime_interval=datetime_interval,
                 forecast_horizon_minutes=forecast_horizon_hour*60,
                 ramp_rate_minutes=60,
+                forecast_values=forecast_values_df,
+                gsp_yields=gsp_yields,
             )

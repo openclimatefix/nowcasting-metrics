@@ -59,8 +59,7 @@ def test_app(
     metric_values = (
         db_session.query(MetricValueSQL).join(MetricSQL).filter(MetricSQL.name == latest_mae.name).all()
     )
-    for mv in metric_values:
-        print(f"{mv.model_id} {mv.location_id} {mv.forecast_horizon_minutes} {mv.value}")
+
     assert len(metric_values) == 23
 
     # check all metrics
@@ -77,7 +76,7 @@ def test_app(
     # Total metrics 48
     # RMSE has been removed
     # + ME # 2 models * 8 forecast horizons * 2 half hours  = 32
-    # + Ramp rate 3 models * 3 forecast horizons  = 9 # TODO this is 0 right now
+    # + Ramp rate 2 models * 3 forecast horizons  = 6 # TODO, not working
     # Total is 80
     # Pinball 2 models * 8 forecast horizons* 2 p levels  = 32
     # Exceedance 2 models * 8 forecast horizons * 2 p levels  = 32

@@ -40,7 +40,7 @@ def get_forecast_values(session: Session, model_name: str) -> pd.DataFrame:
 
     forecasts_ids = query.all()
     forecasts_ids = [m.id for m in forecasts_ids]
-    logger.debug(f"got {len(forecasts_ids)}forecast ids")
+    logger.debug(f"got {len(forecasts_ids)} forecast ids")
 
     query = select(
         ForecastValueSevenDaysSQL.target_time,

@@ -144,7 +144,9 @@ def make_mae_values(
     :param model_name: the model name of the forecast. This is optional.
     :param use_adjuster: option to use the adjuster or not.
     :param forecast_horizon_minutes: the forecast horizon ie. Use results from forecast that are
-    made 60 minutes before target time
+        made 60 minutes before target time
+    :param forecast_values: the forecast values for the last seven days
+    :param gsp_yields: the GSP yields for the last seven days
     :return: 1. the MAE, 2. MAE with adjuster, 3. the number of data points
     """
 
@@ -417,6 +419,8 @@ def make_mae(
     :param n_gsps: The number of Gsps to loop over. Default is N_GSP. (+1 for national)
     :param max_forecast_horizon_minutes.
         The maximum forecast horizon we should look at, default is set below
+    :param all_forecast_values: all forecast values for the last seven days
+    :param gsp_yields: the GSP yields for the last seven days
     """
 
     if max_forecast_horizon_minutes is None:
